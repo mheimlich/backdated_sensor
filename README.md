@@ -5,10 +5,24 @@ time it was captured, for example when a car measured its battery level, instead
 Home Assistant received it. The capture time can come from an attribute, another entity, a
 template or a fixed delay.
 
+It needs Home Assistant 2026.10 or later.
+
+## Installation
+
+[![Open your Home Assistant instance and open this repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=mheimlich&repository=backdated_sensor&category=integration)
+
+- **Marketplace** (Home Assistant 2026.11 or later) **or HACS:** open the repository with
+  the button above, or add `https://github.com/mheimlich/backdated_sensor` as a custom
+  repository of the type Integration. Download it, then restart Home Assistant.
+- **By hand:** copy `custom_components/backdated_sensor` into the `custom_components`
+  folder of your configuration, then restart Home Assistant.
+
 ## Setup in the UI
 
-Under **Settings → Devices & services → Helpers**, choose **Create helper → Backdated
-Sensor**:
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=backdated_sensor)
+
+Use the button above, or under **Settings → Devices & services → Helpers** choose **Create
+helper → Backdated Sensor**:
 
 1. Enter the name and choose the source, a sensor or a binary sensor.
 2. Choose where the capture time comes from (see below) and fill in what that choice
@@ -132,10 +146,13 @@ Each entity has the attribute `captured_at`, the capture time of its value.
 ## Tests
 
 ```sh
+pip install -r requirements_test.txt
+ruff check . && ruff format --check .
 python -m pytest
 ```
 
-with `pytest-homeassistant-custom-component` installed (see `requirements_test.txt`).
+GitHub Actions runs the same on every push and pull request, and checks the integration
+with Home Assistant's hassfest.
 
 ## Icon
 

@@ -1,13 +1,17 @@
 {
   "domain": "backdated_sensor",
   "name": "Backdated Sensor",
-  "codeowners": [],
+  "codeowners": [
+    "@mheimlich"
+  ],
   "config_flow": true,
   "dependencies": [
     "recorder"
   ],
+  "documentation": "https://github.com/mheimlich/backdated_sensor",
   "integration_type": "helper",
   "iot_class": "calculated",
+  "issue_tracker": "https://github.com/mheimlich/backdated_sensor/issues",
   "requirements": [],
   "version": "1.3.1"
 }
