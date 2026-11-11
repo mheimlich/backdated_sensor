@@ -8,13 +8,16 @@ from homeassistant.components.recorder import Recorder
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.core import HomeAssistant, State
 from pytest_homeassistant_custom_component.common import (
+    async_mock_restore_state_shutdown_restart,
     mock_restore_cache_with_extra_data,
 )
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from .conftest import ENTITY, report, setup_sensor
+from .conftest import ENTITY, report, report_state, setup_platform, setup_sensor
+
+TEXT_SOURCE = "sensor.car_charging"
 
 NOW = datetime(2026, 11, 10, 12, 20, tzinfo=UTC)
 
@@ -201,3 +204,63 @@ async def test_a_newer_source_value_replaces_the_restored_one(
     state = hass.states.get(ENTITY)
     assert state.state == "55"
     assert state.last_updated == NOW - timedelta(hours=1)
+
+
+async def test_a_text_is_mirrored_without_unit_or_classes(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """A sensor without unit, device class or state class takes any text."""
+    report_state(hass, TEXT_SOURCE, "charging", NOW - timedelta(hours=2))
+    await setup_platform(
+        hass, "sensor", name="Car charging captured", source=TEXT_SOURCE
+    )
+
+    state = hass.states.get("sensor.car_charging_captured")
+    assert state.state == "charging"
+    assert state.last_updated == NOW - timedelta(hours=2)
+
+
+async def test_an_enum_takes_the_options_of_the_source_and_keeps_them(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """The options come with each value and are stored for a restart."""
+    options = ["connected", "disconnected"]
+    report_state(
+        hass, TEXT_SOURCE, "connected", NOW - timedelta(hours=2), options=options
+    )
+    await setup_platform(
+        hass,
+        "sensor",
+        name="Car charging captured",
+        source=TEXT_SOURCE,
+        device_class="enum",
+    )
+
+    state = hass.states.get("sensor.car_charging_captured")
+    assert state.state == "connected"
+    assert state.attributes["options"] == options
+
+    data = await async_mock_restore_state_shutdown_restart(hass)
+    stored = data.last_states["sensor.car_charging_captured"].extra_data.as_dict()
+    assert stored["native_value"] == "connected"
+    assert stored["options"] == options
+
+
+async def test_a_timestamp_is_mirrored_as_a_time(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """A timestamp sensor reads the source's state as a time."""
+    report_state(
+        hass, TEXT_SOURCE, "2026-11-09T21:16:19+00:00", NOW - timedelta(hours=2)
+    )
+    await setup_platform(
+        hass,
+        "sensor",
+        name="Car charging captured",
+        source=TEXT_SOURCE,
+        device_class="timestamp",
+    )
+
+    assert hass.states.get("sensor.car_charging_captured").state == (
+        "2026-11-09T21:16:19+00:00"
+    )

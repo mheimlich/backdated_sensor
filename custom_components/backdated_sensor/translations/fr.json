@@ -4,13 +4,13 @@
     "step": {
       "user": {
         "title": "Créer un capteur antidaté",
-        "description": "Reproduit un capteur numérique et enregistre chaque valeur à l'instant où elle a été relevée, par exemple le moment où une voiture a mesuré le niveau de sa batterie, au lieu du moment où Home Assistant l'a reçue.",
+        "description": "Reproduit un capteur ou un capteur binaire et enregistre chaque valeur à l'instant où elle a été relevée, par exemple le moment où une voiture a mesuré le niveau de sa batterie, au lieu du moment où Home Assistant l'a reçue.",
         "data": {
           "name": "Nom",
           "source": "Capteur source"
         },
         "data_description": {
-          "source": "Capteur dont l'état numérique est reproduit."
+          "source": "Capteur ou capteur binaire dont l'état est reproduit."
         }
       },
       "timestamp": {
@@ -98,6 +98,8 @@
           "state_class": "Classe d'état"
         },
         "data_description": {
+          "unit_of_measurement": "Uniquement pour un nombre ; laissez-la vide pour reproduire un texte.",
+          "device_class": "Avec Énumération, la liste des options de la source est reprise.",
           "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
         }
       }
@@ -107,19 +109,20 @@
       "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil.",
       "entity_is_source": "L'état du capteur source est la valeur elle-même. Choisissez une autre entité.",
       "template_invalid": "Le modèle ne peut pas être rendu.",
-      "template_not_a_time": "Le modèle ne renvoie pas d'instant."
+      "template_not_a_time": "Le modèle ne renvoie pas d'instant.",
+      "state_not_shown": "L'état actuel de la source ne correspond pas à ces réglages, par exemple un texte avec une unité de mesure."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Modifier le capteur antidaté",
-        "description": "Après une modification, la valeur actuelle est conservée jusqu'à l'arrivée d'une valeur relevée plus tard.",
+        "description": "Une autre source doit être du même type, capteur ou capteur binaire. Après une modification, la valeur actuelle est conservée jusqu'à l'arrivée d'une valeur relevée plus tard.",
         "data": {
           "source": "Capteur source"
         },
         "data_description": {
-          "source": "Capteur dont l'état numérique est reproduit."
+          "source": "Capteur ou capteur binaire dont l'état est reproduit."
         }
       },
       "timestamp": {
@@ -206,6 +209,8 @@
           "state_class": "Classe d'état"
         },
         "data_description": {
+          "unit_of_measurement": "Uniquement pour un nombre ; laissez-la vide pour reproduire un texte.",
+          "device_class": "Avec Énumération, la liste des options de la source est reprise.",
           "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
         }
       }
@@ -215,7 +220,8 @@
       "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil.",
       "entity_is_source": "L'état du capteur source est la valeur elle-même. Choisissez une autre entité.",
       "template_invalid": "Le modèle ne peut pas être rendu.",
-      "template_not_a_time": "Le modèle ne renvoie pas d'instant."
+      "template_not_a_time": "Le modèle ne renvoie pas d'instant.",
+      "state_not_shown": "L'état actuel de la source ne correspond pas à ces réglages, par exemple un texte avec une unité de mesure."
     }
   },
   "selector": {

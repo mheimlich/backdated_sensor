@@ -20,6 +20,7 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import TemplateError
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import (
     TrackTemplate,
     TrackTemplateResult,
@@ -43,6 +44,7 @@ from .const import (
     KIND_SOURCE_ATTRIBUTE,
     KIND_TEMPLATE,
     KINDS,
+    PROPERTIES,
     TIMESTAMP_KEYS,
 )
 
@@ -236,6 +238,28 @@ class TemplateTime(CaptureTime):
             self._tracker = None
 
         return remove
+
+
+def _template(value: Any) -> str:
+    """Check the syntax of a template and keep its text."""
+    cv.template(value)
+    return cv.string(value)
+
+
+# The options giving the capture time; one_capture_time checks their combination.
+CAPTURE_TIME_OPTIONS = {
+    probatio.Optional(CONF_TIMESTAMP_ATTRIBUTE): cv.string,
+    probatio.Optional(CONF_TIMESTAMP_ENTITY): cv.entity_id,
+    probatio.Optional(CONF_TIMESTAMP_PROPERTY): probatio.In(PROPERTIES),
+    probatio.Optional(CONF_TIMESTAMP_TEMPLATE): _template,
+    probatio.Optional(CONF_TIMESTAMP_DELAY): cv.positive_time_period,
+}
+
+
+def one_capture_time(config: dict[str, Any]) -> dict[str, Any]:
+    """Check that the options give the capture time in exactly one way."""
+    kind_of(config)
+    return config
 
 
 def kind_of(config: Mapping[str, Any]) -> str:

@@ -4,13 +4,13 @@
     "step": {
       "user": {
         "title": "Rückdatierten Sensor erstellen",
-        "description": "Spiegelt einen numerischen Sensor und zeichnet jeden Wert zu dem Zeitpunkt auf, zu dem er erfasst wurde, zum Beispiel wann ein Auto seinen Akkustand gemessen hat, statt wann Home Assistant ihn empfangen hat.",
+        "description": "Spiegelt einen Sensor oder Binärsensor und zeichnet jeden Wert zu dem Zeitpunkt auf, zu dem er erfasst wurde, zum Beispiel wann ein Auto seinen Akkustand gemessen hat, statt wann Home Assistant ihn empfangen hat.",
         "data": {
           "name": "Name",
           "source": "Quellsensor"
         },
         "data_description": {
-          "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
+          "source": "Sensor oder Binärsensor, dessen Zustand gespiegelt wird."
         }
       },
       "timestamp": {
@@ -98,6 +98,8 @@
           "state_class": "Zustandsklasse"
         },
         "data_description": {
+          "unit_of_measurement": "Nur für eine Zahl; leer lassen, um einen Text zu spiegeln.",
+          "device_class": "Mit Aufzählung wird die Liste der Optionen der Quelle übernommen.",
           "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
         }
       }
@@ -107,19 +109,20 @@
       "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse.",
       "entity_is_source": "Der Zustand des Quellsensors ist der Wert selbst. Wähle eine andere Entität.",
       "template_invalid": "Das Template kann nicht ausgewertet werden.",
-      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt."
+      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt.",
+      "state_not_shown": "Der aktuelle Zustand der Quelle passt nicht zu diesen Einstellungen, etwa ein Text mit einer Maßeinheit."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Rückdatierten Sensor ändern",
-        "description": "Nach einer Änderung bleibt der aktuelle Wert, bis ein später erfasster Wert eintrifft.",
+        "description": "Eine andere Quelle muss von derselben Art sein, Sensor oder Binärsensor. Nach einer Änderung bleibt der aktuelle Wert, bis ein später erfasster Wert eintrifft.",
         "data": {
           "source": "Quellsensor"
         },
         "data_description": {
-          "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
+          "source": "Sensor oder Binärsensor, dessen Zustand gespiegelt wird."
         }
       },
       "timestamp": {
@@ -206,6 +209,8 @@
           "state_class": "Zustandsklasse"
         },
         "data_description": {
+          "unit_of_measurement": "Nur für eine Zahl; leer lassen, um einen Text zu spiegeln.",
+          "device_class": "Mit Aufzählung wird die Liste der Optionen der Quelle übernommen.",
           "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
         }
       }
@@ -215,7 +220,8 @@
       "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse.",
       "entity_is_source": "Der Zustand des Quellsensors ist der Wert selbst. Wähle eine andere Entität.",
       "template_invalid": "Das Template kann nicht ausgewertet werden.",
-      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt."
+      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt.",
+      "state_not_shown": "Der aktuelle Zustand der Quelle passt nicht zu diesen Einstellungen, etwa ein Text mit einer Maßeinheit."
     }
   },
   "selector": {

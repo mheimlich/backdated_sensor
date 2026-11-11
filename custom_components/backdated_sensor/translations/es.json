@@ -4,13 +4,13 @@
     "step": {
       "user": {
         "title": "Crear un sensor con fecha retroactiva",
-        "description": "Replica un sensor numérico y registra cada valor en el momento en que se capturó, por ejemplo cuándo un coche midió el nivel de su batería, en lugar de cuándo lo recibió Home Assistant.",
+        "description": "Replica un sensor o un sensor binario y registra cada valor en el momento en que se capturó, por ejemplo cuándo un coche midió el nivel de su batería, en lugar de cuándo lo recibió Home Assistant.",
         "data": {
           "name": "Nombre",
           "source": "Sensor de origen"
         },
         "data_description": {
-          "source": "Sensor cuyo estado numérico se replica."
+          "source": "Sensor o sensor binario cuyo estado se replica."
         }
       },
       "timestamp": {
@@ -98,6 +98,8 @@
           "state_class": "Clase de estado"
         },
         "data_description": {
+          "unit_of_measurement": "Solo para un número; déjala vacía para replicar un texto.",
+          "device_class": "Con Enumeración, se toma también la lista de opciones del origen.",
           "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
         }
       }
@@ -107,19 +109,20 @@
       "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo.",
       "entity_is_source": "El estado del sensor de origen es el propio valor. Elige otra entidad.",
       "template_invalid": "La plantilla no se puede procesar.",
-      "template_not_a_time": "La plantilla no devuelve un momento."
+      "template_not_a_time": "La plantilla no devuelve un momento.",
+      "state_not_shown": "El estado actual del origen no corresponde a estos ajustes, por ejemplo un texto con una unidad de medida."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Cambiar el sensor con fecha retroactiva",
-        "description": "Tras un cambio, el valor actual se mantiene hasta que llegue un valor capturado más tarde.",
+        "description": "Otro origen tiene que ser del mismo tipo, sensor o sensor binario. Tras un cambio, el valor actual se mantiene hasta que llegue un valor capturado más tarde.",
         "data": {
           "source": "Sensor de origen"
         },
         "data_description": {
-          "source": "Sensor cuyo estado numérico se replica."
+          "source": "Sensor o sensor binario cuyo estado se replica."
         }
       },
       "timestamp": {
@@ -206,6 +209,8 @@
           "state_class": "Clase de estado"
         },
         "data_description": {
+          "unit_of_measurement": "Solo para un número; déjala vacía para replicar un texto.",
+          "device_class": "Con Enumeración, se toma también la lista de opciones del origen.",
           "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
         }
       }
@@ -215,7 +220,8 @@
       "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo.",
       "entity_is_source": "El estado del sensor de origen es el propio valor. Elige otra entidad.",
       "template_invalid": "La plantilla no se puede procesar.",
-      "template_not_a_time": "La plantilla no devuelve un momento."
+      "template_not_a_time": "La plantilla no devuelve un momento.",
+      "state_not_shown": "El estado actual del origen no corresponde a estos ajustes, por ejemplo un texto con una unidad de medida."
     }
   },
   "selector": {

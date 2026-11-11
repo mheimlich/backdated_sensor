@@ -9,7 +9,7 @@ from homeassistant.components.recorder import Recorder
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.data_entry_flow import FlowResult, FlowResultType, InvalidData
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -19,7 +19,14 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 
 from custom_components.backdated_sensor.const import DOMAIN
 
-from .conftest import ENTITY, SOURCE, report
+from .conftest import (
+    BINARY_ENTITY,
+    BINARY_SOURCE,
+    ENTITY,
+    SOURCE,
+    report,
+    report_state,
+)
 
 NOW = datetime(2026, 11, 10, 12, 20, tzinfo=UTC)
 CAPTURED = NOW - timedelta(hours=6)
@@ -92,7 +99,9 @@ def _selector(result: FlowResult, name: str) -> Any:
     )
 
 
-async def _start(hass: HomeAssistant) -> FlowResult:
+async def _start(
+    hass: HomeAssistant, source: str = SOURCE, name: str = OPTIONS["name"]
+) -> FlowResult:
     """Run the first step of the setup dialog, which leads to the capture time menu."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
@@ -100,7 +109,7 @@ async def _start(hass: HomeAssistant) -> FlowResult:
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": OPTIONS["name"], "source": SOURCE}
+        result["flow_id"], {"name": name, "source": source}
     )
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "timestamp"
@@ -245,6 +254,70 @@ async def test_a_capture_time_that_cannot_work_is_refused(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == kind
     assert result["errors"] == {"base": error}
+
+
+async def test_a_binary_source_creates_a_binary_sensor(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """Only the binary sensor's device class is asked for and suggested."""
+    report_state(hass, BINARY_SOURCE, "on", CAPTURED, device_class="lock")
+    result = await _choose(
+        hass,
+        await _start(hass, BINARY_SOURCE, "Car locked captured"),
+        "source_attribute",
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"timestamp_attribute": "data_captured_at"}
+    )
+
+    assert result["step_id"] == "details"
+    assert [str(key) for key in result["data_schema"].schema] == ["device_class"]
+    assert _suggested(result) == {"device_class": "lock"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"device_class": "lock"}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    state = hass.states.get(BINARY_ENTITY)
+    assert state.state == "on"
+    assert state.last_updated == CAPTURED
+    assert hass.states.get("sensor.car_locked_captured") is None
+
+
+async def test_a_text_source_with_a_unit_is_refused(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """The sensor could not show the source's current state."""
+    report_state(hass, SOURCE, "charging", CAPTURED)
+    result = await _choose(hass, await _start(hass), "source_attribute")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"timestamp_attribute": "data_captured_at"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"unit_of_measurement": "%"}
+    )
+
+    assert result["errors"] == {"base": "state_not_shown"}
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert hass.states.get(ENTITY).state == "charging"
+
+
+async def test_another_source_has_to_be_of_the_same_domain(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """A sensor cannot become a binary sensor, which would be another entity."""
+    report(hass, "30", CAPTURED)
+    entry = await _set_up_entry(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            result["flow_id"], {"source": BINARY_SOURCE}
+        )
 
 
 @pytest.mark.parametrize(

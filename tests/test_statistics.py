@@ -117,6 +117,7 @@ async def test_a_pending_correction_is_stored_for_a_restart(
         "captured": _at(7, 30).isoformat(),
         "written": _at(7, 30).timestamp(),
         "correct_statistics_from": _at(7).isoformat(),
+        "options": None,
     }
 
 
@@ -140,7 +141,7 @@ async def test_a_restored_correction_runs_after_the_next_hour(
         ),
     )
     with patch(
-        "custom_components.backdated_sensor.sensor.async_correct_hourly_statistics",
+        "custom_components.backdated_sensor.entity.async_correct_hourly_statistics",
         return_value=3,
     ) as correct:
         await setup_sensor(hass)

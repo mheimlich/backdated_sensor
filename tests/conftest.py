@@ -7,6 +7,10 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
+# The plugin's test configuration has a custom_components package of its own, which
+# Home Assistant's loader would find unless this repository's is imported first.
+import custom_components.backdated_sensor  # noqa: F401
+
 pytest_plugins = "pytest_homeassistant_custom_component"
 
 SOURCE = "sensor.car_battery"
@@ -57,4 +61,32 @@ async def setup_sensor(hass: HomeAssistant, **capture_time: Any) -> None:
         del config["timestamp_attribute"]
         config.update(capture_time)
     assert await async_setup_component(hass, "sensor", {"sensor": [config]})
+    await hass.async_block_till_done()
+
+
+BINARY_SOURCE = "binary_sensor.car_locked"
+BINARY_ENTITY = "binary_sensor.car_locked_captured"
+
+
+def report_state(
+    hass: HomeAssistant,
+    entity_id: str,
+    value: str,
+    captured: datetime,
+    **attributes: Any,
+) -> None:
+    """Set an entity's state with the capture time and further attributes."""
+    hass.states.async_set(
+        entity_id, value, {"data_captured_at": captured.isoformat(), **attributes}
+    )
+
+
+async def setup_platform(hass: HomeAssistant, domain: str, **config: Any) -> None:
+    """Set up one backdated entity of the domain from YAML."""
+    entry = {
+        "platform": "backdated_sensor",
+        "timestamp_attribute": "data_captured_at",
+        **config,
+    }
+    assert await async_setup_component(hass, domain, {domain: [entry]})
     await hass.async_block_till_done()

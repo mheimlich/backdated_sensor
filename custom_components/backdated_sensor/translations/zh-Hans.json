@@ -4,13 +4,13 @@
     "step": {
       "user": {
         "title": "创建回溯时间戳传感器",
-        "description": "镜像一个数值传感器，并按每个值的采集时间（例如汽车测量电池电量的时间）记录，而不是按 Home Assistant 收到该值的时间记录。",
+        "description": "镜像一个传感器或二元传感器，并按每个值的采集时间（例如汽车测量电池电量的时间）记录，而不是按 Home Assistant 收到该值的时间记录。",
         "data": {
           "name": "名称",
           "source": "源传感器"
         },
         "data_description": {
-          "source": "要镜像其数值状态的传感器。"
+          "source": "要镜像其状态的传感器或二元传感器。"
         }
       },
       "timestamp": {
@@ -98,6 +98,8 @@
           "state_class": "状态类"
         },
         "data_description": {
+          "unit_of_measurement": "仅用于数值；要镜像文本请留空。",
+          "device_class": "选择“枚举”时，会一并采用源的选项列表。",
           "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
         }
       }
@@ -107,19 +109,20 @@
       "state_class_not_valid": "状态类与设备类别不匹配。",
       "entity_is_source": "源传感器的状态就是值本身。请选择另一个实体。",
       "template_invalid": "无法渲染该模板。",
-      "template_not_a_time": "该模板未渲染出时间。"
+      "template_not_a_time": "该模板未渲染出时间。",
+      "state_not_shown": "源的当前状态与这些设置不符，例如带有度量单位的文本。"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "更改回溯时间戳传感器",
-        "description": "更改后，当前值会保留，直到收到采集时间更晚的值。",
+        "description": "新的源必须属于同一类型：传感器或二元传感器。更改后，当前值会保留，直到收到采集时间更晚的值。",
         "data": {
           "source": "源传感器"
         },
         "data_description": {
-          "source": "要镜像其数值状态的传感器。"
+          "source": "要镜像其状态的传感器或二元传感器。"
         }
       },
       "timestamp": {
@@ -206,6 +209,8 @@
           "state_class": "状态类"
         },
         "data_description": {
+          "unit_of_measurement": "仅用于数值；要镜像文本请留空。",
+          "device_class": "选择“枚举”时，会一并采用源的选项列表。",
           "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
         }
       }
@@ -215,7 +220,8 @@
       "state_class_not_valid": "状态类与设备类别不匹配。",
       "entity_is_source": "源传感器的状态就是值本身。请选择另一个实体。",
       "template_invalid": "无法渲染该模板。",
-      "template_not_a_time": "该模板未渲染出时间。"
+      "template_not_a_time": "该模板未渲染出时间。",
+      "state_not_shown": "源的当前状态与这些设置不符，例如带有度量单位的文本。"
     }
   },
   "selector": {

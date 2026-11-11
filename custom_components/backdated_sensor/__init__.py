@@ -1,4 +1,4 @@
-"""Sensors that record another sensor's value at the time given by one of its attributes."""
+"""Sensors and binary sensors that record another entity's state at its capture time."""
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -13,7 +13,7 @@ from .const import CONF_SOURCE, DOMAIN
 
 CONFIG_SCHEMA = cv.platform_only_config_schema(DOMAIN)
 
-PLATFORMS = (Platform.SENSOR,)
+PLATFORMS = (Platform.BINARY_SENSOR, Platform.SENSOR)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

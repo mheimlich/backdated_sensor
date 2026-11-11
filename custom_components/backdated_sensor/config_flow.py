@@ -10,8 +10,8 @@ from homeassistant.components.sensor import (
     CONF_STATE_CLASS,
     DEVICE_CLASS_STATE_CLASSES,
     DEVICE_CLASS_UNITS,
+    NON_NUMERIC_DEVICE_CLASSES,
 )
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_NAME,
@@ -20,6 +20,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     Platform,
 )
+from homeassistant.core import split_entity_id
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers import selector
 from homeassistant.helpers.schema_config_entry_flow import (
@@ -52,6 +53,8 @@ from .const import (
     PROPERTIES,
     TIMESTAMP_KEYS,
 )
+from .entity import source_platform
+from .values import numeric_expected, sensor_value
 
 type Validator = Callable[
     [SchemaCommonFlowHandler, dict[str, Any]], Coroutine[Any, Any, dict[str, Any]]
@@ -62,7 +65,7 @@ type Suggestions = (
 )
 
 SOURCE_SELECTOR = selector.EntitySelector(
-    selector.EntitySelectorConfig(domain=SENSOR_DOMAIN)
+    selector.EntitySelectorConfig(domain=[Platform.SENSOR, Platform.BINARY_SENSOR])
 )
 
 UNITS = sorted(
@@ -81,8 +84,6 @@ USER_SCHEMA = probatio.Schema(
         probatio.Required(CONF_SOURCE): SOURCE_SELECTOR,
     }
 )
-
-SOURCE_SCHEMA = probatio.Schema({probatio.Required(CONF_SOURCE): SOURCE_SELECTOR})
 
 ENTITY_SCHEMA = probatio.Schema(
     {probatio.Required(CONF_TIMESTAMP_ENTITY): selector.EntitySelector()}
@@ -110,6 +111,18 @@ DELAY_SCHEMA = probatio.Schema(
 )
 
 
+async def _source_schema(handler: SchemaCommonFlowHandler) -> probatio.Schema:
+    """Return the form for another source of the same domain, so the entity stays."""
+    domain = split_entity_id(handler.options[CONF_SOURCE])[0]
+    return probatio.Schema(
+        {
+            probatio.Required(CONF_SOURCE): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=domain)
+            )
+        }
+    )
+
+
 def _attribute_schema(
     entity_key: str,
 ) -> Callable[[SchemaCommonFlowHandler], Coroutine[Any, Any, probatio.Schema]]:
@@ -130,7 +143,15 @@ def _attribute_schema(
 
 
 async def _details_schema(handler: SchemaCommonFlowHandler) -> probatio.Schema:
-    """Return the form for the unit and the classes."""
+    """Return the form for the device class and, for a sensor, the unit and state class."""
+    if source_platform(handler.options[CONF_SOURCE]) is Platform.BINARY_SENSOR:
+        return probatio.Schema(
+            {
+                probatio.Optional(CONF_DEVICE_CLASS): selector.DeviceClassSelector(
+                    selector.DeviceClassSelectorConfig(domain=Platform.BINARY_SENSOR)
+                )
+            }
+        )
     return probatio.Schema(
         {
             probatio.Optional(CONF_UNIT_OF_MEASUREMENT): selector.SelectSelector(
@@ -208,19 +229,42 @@ def _choosing(
 async def _validate_details(
     handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
 ) -> dict[str, Any]:
-    """Check that the unit and the state class fit the device class."""
-    if device_class := user_input.get(CONF_DEVICE_CLASS):
+    """Check a sensor's settings against each other and the source's current state.
+
+    The unit and the state class have to fit the device class, and the sensor has to
+    be able to show the source's state, for example a number if it has a unit.
+    """
+    source = handler.options[CONF_SOURCE]
+    if source_platform(source) is Platform.BINARY_SENSOR:
+        return user_input
+    device_class = user_input.get(CONF_DEVICE_CLASS)
+    unit = user_input.get(CONF_UNIT_OF_MEASUREMENT)
+    state_class = user_input.get(CONF_STATE_CLASS)
+    if device_class:
         units = DEVICE_CLASS_UNITS.get(device_class)
-        if units is not None and user_input.get(CONF_UNIT_OF_MEASUREMENT) not in units:
+        if (units is not None and unit not in units) or (
+            unit and device_class in NON_NUMERIC_DEVICE_CLASSES
+        ):
             raise SchemaFlowError("unit_not_valid")
         state_classes = DEVICE_CLASS_STATE_CLASSES.get(device_class)
-        state_class = user_input.get(CONF_STATE_CLASS)
         if (
             state_classes is not None
             and state_class
             and state_class not in state_classes
         ):
             raise SchemaFlowError("state_class_not_valid")
+    state = handler.parent_handler.hass.states.get(source)
+    if (
+        state is not None
+        and state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        and sensor_value(
+            state.state,
+            device_class,
+            numeric_expected(device_class, state_class, unit),
+        )
+        is None
+    ):
+        raise SchemaFlowError("state_not_shown")
     return user_input
 
 
@@ -275,13 +319,13 @@ CONFIG_FLOW = {
 }
 
 OPTIONS_FLOW = {
-    "init": SchemaFlowFormStep(SOURCE_SCHEMA, next_step="timestamp"),
+    "init": SchemaFlowFormStep(_source_schema, next_step="timestamp"),
     **_capture_time_steps(UNDEFINED),
 }
 
 
 class ConfigFlowHandler(SchemaConfigFlowHandler, domain=DOMAIN):
-    """Create a backdated sensor in the UI and change its options."""
+    """Create a backdated sensor or binary sensor in the UI and change its options."""
 
     config_flow = CONFIG_FLOW
     options_flow = OPTIONS_FLOW

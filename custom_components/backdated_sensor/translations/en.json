@@ -4,13 +4,13 @@
     "step": {
       "user": {
         "title": "Create a backdated sensor",
-        "description": "Mirrors a numeric sensor and records each value at the time it was captured, for example when a car measured its battery level, instead of when Home Assistant received it.",
+        "description": "Mirrors a sensor or binary sensor and records each value at the time it was captured, for example when a car measured its battery level, instead of when Home Assistant received it.",
         "data": {
           "name": "Name",
           "source": "Source sensor"
         },
         "data_description": {
-          "source": "Sensor whose numeric state is mirrored."
+          "source": "Sensor or binary sensor whose state is mirrored."
         }
       },
       "timestamp": {
@@ -98,6 +98,8 @@
           "state_class": "State class"
         },
         "data_description": {
+          "unit_of_measurement": "Only for a number; leave it empty to mirror a text.",
+          "device_class": "With Enumeration, the source's list of options is taken along.",
           "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
         }
       }
@@ -107,19 +109,20 @@
       "state_class_not_valid": "The state class does not fit the device class.",
       "entity_is_source": "The source sensor's state is the value itself. Choose another entity.",
       "template_invalid": "The template cannot be rendered.",
-      "template_not_a_time": "The template does not render a time."
+      "template_not_a_time": "The template does not render a time.",
+      "state_not_shown": "The source's current state does not fit these settings, for example a text with a unit of measurement."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Change the backdated sensor",
-        "description": "After a change, the current value stays until a value captured later arrives.",
+        "description": "Another source has to be of the same kind, a sensor or a binary sensor. After a change, the current value stays until a value captured later arrives.",
         "data": {
           "source": "Source sensor"
         },
         "data_description": {
-          "source": "Sensor whose numeric state is mirrored."
+          "source": "Sensor or binary sensor whose state is mirrored."
         }
       },
       "timestamp": {
@@ -206,6 +209,8 @@
           "state_class": "State class"
         },
         "data_description": {
+          "unit_of_measurement": "Only for a number; leave it empty to mirror a text.",
+          "device_class": "With Enumeration, the source's list of options is taken along.",
           "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
         }
       }
@@ -215,7 +220,8 @@
       "state_class_not_valid": "The state class does not fit the device class.",
       "entity_is_source": "The source sensor's state is the value itself. Choose another entity.",
       "template_invalid": "The template cannot be rendered.",
-      "template_not_a_time": "The template does not render a time."
+      "template_not_a_time": "The template does not render a time.",
+      "state_not_shown": "The source's current state does not fit these settings, for example a text with a unit of measurement."
     }
   },
   "selector": {

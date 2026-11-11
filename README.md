@@ -1,8 +1,8 @@
 # Backdated Sensor
 
-A Home Assistant sensor that mirrors a numeric sensor and records each value at the time it
-was captured, for example when a car measured its battery level, instead of when Home
-Assistant received it. The capture time can come from an attribute, another entity, a
+A Home Assistant helper that mirrors a sensor or binary sensor and records each value at the
+time it was captured, for example when a car measured its battery level, instead of when
+Home Assistant received it. The capture time can come from an attribute, another entity, a
 template or a fixed delay.
 
 ## Setup in the UI
@@ -10,17 +10,34 @@ template or a fixed delay.
 Under **Settings → Devices & services → Helpers**, choose **Create helper → Backdated
 Sensor**:
 
-1. Enter the name and choose the source sensor.
+1. Enter the name and choose the source, a sensor or a binary sensor.
 2. Choose where the capture time comes from (see below) and fill in what that choice
    asks for. An attribute is chosen from a list of the entity's attributes, and a template
    is rendered once and refused if it fails or gives no time.
-3. The unit of measurement, device class and state class are taken from the source and
-   can be changed. A unit or state class that does not fit the device class is refused.
+3. For a sensor, the unit of measurement, device class and state class are taken from the
+   source and can be changed; for a binary sensor, the device class. Settings that do not
+   fit together or cannot show the source's current state, such as a unit for a text, are
+   refused.
 
-The sensor joins the source's device and is named like the device's other entities.
-**Configure** on the helper changes everything but the name; the sensor is then reloaded
-and keeps its value. After a change, the current value stays until a value captured later
-arrives. When the source's entity ID changes, the sensor follows it.
+The helper joins the source's device and is named like the device's other entities.
+**Configure** on the helper changes everything but the name; another source has to be of
+the same kind, sensor or binary sensor. The helper is then reloaded and keeps its value.
+After a change, the current value stays until a value captured later arrives. When the
+source's entity ID changes, the helper follows it.
+
+## Values
+
+A binary sensor source makes a binary sensor, which takes `on` and `off`. A sensor source
+makes a sensor, which takes
+
+- a number if it has a unit, a state class or a numeric device class,
+- a time with the device class Timestamp or Uptime, and a date with Date,
+- any text otherwise. With the device class Enumeration, the source's list of options
+  comes along with each value.
+
+States are shown as the source reports them, such as `disconnected`; the names the
+source's integration translates them to do not carry over. A binary sensor's device class
+names `on` and `off` as usual, such as Locked and Unlocked.
 
 ## Capture time
 
@@ -37,7 +54,7 @@ A time is read from a datetime, an ISO 8601 text (local time if it has no offset
 Unix time in seconds, or in milliseconds if the number is 10<sup>11</sup> or more.
 
 When the time comes from entities other than the source, the value and the time arrive
-as separate state changes. The sensor then waits until the source and those entities have
+as separate state changes. The entity then waits until the source and those entities have
 stayed unchanged for 5 seconds and pairs the source's value with the time it reads at
 that moment, whichever arrived first. Reports less than 5 seconds apart therefore make one
 value. A template counts as reading the entities it read when last rendered. Without other
@@ -46,7 +63,7 @@ entity it reads changes, never because the clock moved on.
 
 ## Setup in YAML
 
-Add one entry per sensor under `sensor:`:
+Add one entry per sensor under `sensor:` and per binary sensor under `binary_sensor:`:
 
 ```yaml
 sensor:
@@ -66,44 +83,51 @@ sensor:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
+
+binary_sensor:
+  - platform: backdated_sensor
+    name: Car locked captured
+    source: binary_sensor.car_locked
+    timestamp_attribute: data_captured_at
+    device_class: lock
 ```
 
 | Option | Required | Description |
 | --- | --- | --- |
-| `name` | yes | Name of the sensor. |
-| `source` | yes | Sensor whose numeric state is mirrored. |
+| `name` | yes | Name of the entity. |
+| `source` | yes | Entity whose state is mirrored. |
 | `timestamp_…` | yes | One combination from the table above. `timestamp_delay` takes a duration such as `"00:15:00"`. |
-| `unique_id` | no | Makes the sensor editable in the UI. |
-| `unit_of_measurement`, `device_class`, `state_class` | no | As for any sensor. They are not taken from the source. |
+| `unique_id` | no | Makes the entity editable in the UI. |
+| `unit_of_measurement`, `device_class`, `state_class` | no | As for any sensor; a binary sensor takes `device_class` only. They are not taken from the source. |
 
-A sensor set up in YAML belongs to no device.
+An entity set up in YAML belongs to no device.
 
-## Sensor
+## Entities
 
-The sensor has the attribute `captured_at`, the capture time of its value.
+Each entity has the attribute `captured_at`, the capture time of its value.
 
 ### Behaviour
 
 - **Which updates count.** A source update is taken only if its capture time is later than
   the one of the current value. Updates without a capture time, with an equal or earlier
-  one, `unknown`, `unavailable` or a non-numeric state are ignored, and the sensor keeps
-  its value.
+  one, `unknown`, `unavailable` or a state the entity cannot take (see Values) are
+  ignored, and the entity keeps its value.
 - **Recorded time.** The value is written with its capture time as `last_updated`, so the
   history shows it from that moment. A capture time in the future is recorded as the
-  current time. A value is never recorded before the latest row of the sensor, since the
+  current time. A value is never recorded before the latest row of the entity, since the
   history reads rows in time order; it then follows that row by a millisecond. Before its
-  first value the sensor is `unknown` from the time it was set up, so the first value after
+  first value the entity is `unknown` from the time it was set up, so the first value after
   installation may be recorded at that time instead.
-- **Restarts and reloads.** The sensor restores its value and capture time and records it
+- **Restarts and reloads.** The entity restores its value and capture time and records it
   just after its last row, which after a reload is the `unavailable` row Home Assistant
   writes meanwhile. A newer value the source holds by then is taken at once.
-- **Long-term statistics.** With a `state_class`, the recorder compiles statistics every
-  five minutes from the rows recorded so far, so periods compiled before a backdated value
-  arrived hold the previous value. Once the hour in which the value arrived has been
-  compiled, the sensor recomputes the affected hourly statistics from the recorded history
-  (time-weighted mean, minimum and maximum) and rewrites them. It only rewrites hours that
-  already exist. The five-minute statistics keep the previous value. A pending correction
-  is kept across restarts.
+- **Long-term statistics.** For a sensor with a `state_class`, the recorder compiles
+  statistics every five minutes from the rows recorded so far, so periods compiled before a
+  backdated value arrived hold the previous value. Once the hour in which the value arrived
+  has been compiled, the sensor recomputes the affected hourly statistics from the recorded
+  history (time-weighted mean, minimum and maximum) and rewrites them. It only rewrites
+  hours that already exist. The five-minute statistics keep the previous value. A pending
+  correction is kept across restarts.
 
 ## Tests
 
