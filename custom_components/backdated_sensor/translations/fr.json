@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Créer un capteur antidaté",
-        "description": "Reproduit un capteur numérique et enregistre chaque valeur à l'instant indiqué par l'un de ses attributs, par exemple le moment où une voiture a relevé le niveau de sa batterie, au lieu du moment où Home Assistant l'a reçue.",
+        "description": "Reproduit un capteur numérique et enregistre chaque valeur à l'instant où elle a été relevée, par exemple le moment où une voiture a mesuré le niveau de sa batterie, au lieu du moment où Home Assistant l'a reçue.",
         "data": {
           "name": "Nom",
           "source": "Capteur source"
@@ -13,31 +13,108 @@
           "source": "Capteur dont l'état numérique est reproduit."
         }
       },
+      "timestamp": {
+        "title": "Instant du relevé",
+        "description": "D'où vient l'instant où une valeur a été relevée ? Il peut s'agir d'un texte ISO 8601 ou d'un temps Unix en secondes ou en millisecondes. S'il vient d'une autre entité, la valeur et l'instant sont associés dès que tous deux sont restés inchangés pendant 5 secondes.",
+        "menu_options": {
+          "source_attribute": "Attribut du capteur source",
+          "entity_state": "État d'une autre entité",
+          "entity_attribute": "Attribut d'une autre entité",
+          "entity_change": "Dernier changement d'une autre entité",
+          "template": "Modèle",
+          "delay": "Instant de réception moins un délai"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribut du capteur source",
+        "data": {
+          "timestamp_attribute": "Attribut d'horodatage"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut contenant l'instant où la valeur du capteur source a été relevée."
+        }
+      },
+      "entity_state": {
+        "title": "État d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité d'horodatage"
+        },
+        "data_description": {
+          "timestamp_entity": "Entité dont l'état est l'instant du relevé, par exemple un capteur d'horodatage."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribut d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité"
+        },
+        "data_description": {
+          "timestamp_entity": "Entité dont un attribut contient l'instant du relevé. L'attribut est choisi ensuite."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribut d'une autre entité",
+        "data": {
+          "timestamp_attribute": "Attribut d'horodatage"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut contenant l'instant du relevé."
+        }
+      },
+      "entity_change": {
+        "title": "Dernier changement d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité",
+          "timestamp_property": "Instant"
+        },
+        "data_description": {
+          "timestamp_property": "Dernière modification : quand son état a changé pour la dernière fois. Dernière mise à jour : quand son état ou un attribut a changé pour la dernière fois. Dernier signalement : quand elle s'est signalée pour la dernière fois, même sans changement."
+        }
+      },
+      "template": {
+        "title": "Modèle",
+        "data": {
+          "timestamp_template": "Modèle"
+        },
+        "data_description": {
+          "timestamp_template": "Renvoie l'instant du relevé. La variable `source` contient l'ID d'entité du capteur source, et `now()` donne l'instant où un changement a été reçu."
+        }
+      },
+      "delay": {
+        "title": "Instant de réception moins un délai",
+        "data": {
+          "timestamp_delay": "Délai"
+        },
+        "data_description": {
+          "timestamp_delay": "L'instant du relevé est l'instant où une valeur a été reçue, moins ce délai."
+        }
+      },
       "details": {
-        "title": "Instant du relevé et unité",
+        "title": "Unité et classes",
         "description": "L'unité et les classes sont reprises du capteur source et peuvent être modifiées.",
         "data": {
-          "timestamp_attribute": "Attribut d'horodatage",
           "unit_of_measurement": "Unité de mesure",
           "device_class": "Classe d'appareil",
           "state_class": "Classe d'état"
         },
         "data_description": {
-          "timestamp_attribute": "Attribut du capteur source contenant l'instant où sa valeur a été relevée.",
           "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
         }
       }
     },
     "error": {
       "unit_not_valid": "L'unité de mesure ne correspond pas à la classe d'appareil.",
-      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil."
+      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil.",
+      "entity_is_source": "L'état du capteur source est la valeur elle-même. Choisissez une autre entité.",
+      "template_invalid": "Le modèle ne peut pas être rendu.",
+      "template_not_a_time": "Le modèle ne renvoie pas d'instant."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Modifier le capteur antidaté",
-        "description": "Avec un autre capteur source, la valeur actuelle est conservée jusqu'à ce que ce capteur signale une valeur relevée plus tard.",
+        "description": "Après une modification, la valeur actuelle est conservée jusqu'à l'arrivée d'une valeur relevée plus tard.",
         "data": {
           "source": "Capteur source"
         },
@@ -45,23 +122,109 @@
           "source": "Capteur dont l'état numérique est reproduit."
         }
       },
-      "details": {
-        "title": "Instant du relevé et unité",
+      "timestamp": {
+        "title": "Instant du relevé",
+        "description": "D'où vient l'instant où une valeur a été relevée ? Il peut s'agir d'un texte ISO 8601 ou d'un temps Unix en secondes ou en millisecondes. S'il vient d'une autre entité, la valeur et l'instant sont associés dès que tous deux sont restés inchangés pendant 5 secondes.",
+        "menu_options": {
+          "source_attribute": "Attribut du capteur source",
+          "entity_state": "État d'une autre entité",
+          "entity_attribute": "Attribut d'une autre entité",
+          "entity_change": "Dernier changement d'une autre entité",
+          "template": "Modèle",
+          "delay": "Instant de réception moins un délai"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribut du capteur source",
         "data": {
-          "timestamp_attribute": "Attribut d'horodatage",
+          "timestamp_attribute": "Attribut d'horodatage"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut contenant l'instant où la valeur du capteur source a été relevée."
+        }
+      },
+      "entity_state": {
+        "title": "État d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité d'horodatage"
+        },
+        "data_description": {
+          "timestamp_entity": "Entité dont l'état est l'instant du relevé, par exemple un capteur d'horodatage."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribut d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité"
+        },
+        "data_description": {
+          "timestamp_entity": "Entité dont un attribut contient l'instant du relevé. L'attribut est choisi ensuite."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribut d'une autre entité",
+        "data": {
+          "timestamp_attribute": "Attribut d'horodatage"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut contenant l'instant du relevé."
+        }
+      },
+      "entity_change": {
+        "title": "Dernier changement d'une autre entité",
+        "data": {
+          "timestamp_entity": "Entité",
+          "timestamp_property": "Instant"
+        },
+        "data_description": {
+          "timestamp_property": "Dernière modification : quand son état a changé pour la dernière fois. Dernière mise à jour : quand son état ou un attribut a changé pour la dernière fois. Dernier signalement : quand elle s'est signalée pour la dernière fois, même sans changement."
+        }
+      },
+      "template": {
+        "title": "Modèle",
+        "data": {
+          "timestamp_template": "Modèle"
+        },
+        "data_description": {
+          "timestamp_template": "Renvoie l'instant du relevé. La variable `source` contient l'ID d'entité du capteur source, et `now()` donne l'instant où un changement a été reçu."
+        }
+      },
+      "delay": {
+        "title": "Instant de réception moins un délai",
+        "data": {
+          "timestamp_delay": "Délai"
+        },
+        "data_description": {
+          "timestamp_delay": "L'instant du relevé est l'instant où une valeur a été reçue, moins ce délai."
+        }
+      },
+      "details": {
+        "title": "Unité et classes",
+        "data": {
           "unit_of_measurement": "Unité de mesure",
           "device_class": "Classe d'appareil",
           "state_class": "Classe d'état"
         },
         "data_description": {
-          "timestamp_attribute": "Attribut du capteur source contenant l'instant où sa valeur a été relevée.",
           "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
         }
       }
     },
     "error": {
       "unit_not_valid": "L'unité de mesure ne correspond pas à la classe d'appareil.",
-      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil."
+      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil.",
+      "entity_is_source": "L'état du capteur source est la valeur elle-même. Choisissez une autre entité.",
+      "template_invalid": "Le modèle ne peut pas être rendu.",
+      "template_not_a_time": "Le modèle ne renvoie pas d'instant."
+    }
+  },
+  "selector": {
+    "timestamp_property": {
+      "options": {
+        "last_changed": "Dernière modification",
+        "last_updated": "Dernière mise à jour",
+        "last_reported": "Dernier signalement"
+      }
     }
   }
 }

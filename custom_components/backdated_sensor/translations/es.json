@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Crear un sensor con fecha retroactiva",
-        "description": "Replica un sensor numérico y registra cada valor en el momento que indica uno de sus atributos, por ejemplo cuándo un coche midió el nivel de su batería, en lugar de cuándo lo recibió Home Assistant.",
+        "description": "Replica un sensor numérico y registra cada valor en el momento en que se capturó, por ejemplo cuándo un coche midió el nivel de su batería, en lugar de cuándo lo recibió Home Assistant.",
         "data": {
           "name": "Nombre",
           "source": "Sensor de origen"
@@ -13,31 +13,108 @@
           "source": "Sensor cuyo estado numérico se replica."
         }
       },
+      "timestamp": {
+        "title": "Momento de captura",
+        "description": "¿De dónde viene el momento en que se capturó un valor? Puede ser un texto ISO 8601 o un tiempo Unix en segundos o milisegundos. Si viene de otra entidad, el valor y el momento se emparejan cuando ambos llevan 5 segundos sin cambiar.",
+        "menu_options": {
+          "source_attribute": "Atributo del sensor de origen",
+          "entity_state": "Estado de otra entidad",
+          "entity_attribute": "Atributo de otra entidad",
+          "entity_change": "Último cambio de otra entidad",
+          "template": "Plantilla",
+          "delay": "Momento de recepción menos un retraso"
+        }
+      },
+      "source_attribute": {
+        "title": "Atributo del sensor de origen",
+        "data": {
+          "timestamp_attribute": "Atributo de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo que contiene el momento en que se capturó el valor del sensor de origen."
+        }
+      },
+      "entity_state": {
+        "title": "Estado de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_entity": "Entidad cuyo estado es el momento de captura, como un sensor de marca de tiempo."
+        }
+      },
+      "entity_attribute": {
+        "title": "Atributo de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad"
+        },
+        "data_description": {
+          "timestamp_entity": "Entidad con un atributo que contiene el momento de captura. El atributo se elige a continuación."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Atributo de otra entidad",
+        "data": {
+          "timestamp_attribute": "Atributo de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo que contiene el momento de captura."
+        }
+      },
+      "entity_change": {
+        "title": "Último cambio de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad",
+          "timestamp_property": "Momento"
+        },
+        "data_description": {
+          "timestamp_property": "Último cambio: cuando cambió su estado por última vez. Última actualización: cuando cambió su estado o un atributo por última vez. Último informe: cuando informó por última vez, aunque no hubiera cambios."
+        }
+      },
+      "template": {
+        "title": "Plantilla",
+        "data": {
+          "timestamp_template": "Plantilla"
+        },
+        "data_description": {
+          "timestamp_template": "Devuelve el momento de captura. La variable `source` contiene el ID de entidad del sensor de origen, y `now()` da el momento en que se recibió un cambio."
+        }
+      },
+      "delay": {
+        "title": "Momento de recepción menos un retraso",
+        "data": {
+          "timestamp_delay": "Retraso"
+        },
+        "data_description": {
+          "timestamp_delay": "El momento de captura es el momento en que se recibió un valor, menos este retraso."
+        }
+      },
       "details": {
-        "title": "Momento de captura y unidad",
+        "title": "Unidad y clases",
         "description": "La unidad y las clases se toman del sensor de origen y se pueden cambiar.",
         "data": {
-          "timestamp_attribute": "Atributo de marca de tiempo",
           "unit_of_measurement": "Unidad de medida",
           "device_class": "Clase de dispositivo",
           "state_class": "Clase de estado"
         },
         "data_description": {
-          "timestamp_attribute": "Atributo del sensor de origen que contiene el momento en que se capturó su valor.",
           "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
         }
       }
     },
     "error": {
       "unit_not_valid": "La unidad de medida no corresponde a la clase de dispositivo.",
-      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo."
+      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo.",
+      "entity_is_source": "El estado del sensor de origen es el propio valor. Elige otra entidad.",
+      "template_invalid": "La plantilla no se puede procesar.",
+      "template_not_a_time": "La plantilla no devuelve un momento."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Cambiar el sensor con fecha retroactiva",
-        "description": "Con otro sensor de origen, el valor actual se mantiene hasta que ese sensor informe de un valor capturado más tarde.",
+        "description": "Tras un cambio, el valor actual se mantiene hasta que llegue un valor capturado más tarde.",
         "data": {
           "source": "Sensor de origen"
         },
@@ -45,23 +122,109 @@
           "source": "Sensor cuyo estado numérico se replica."
         }
       },
-      "details": {
-        "title": "Momento de captura y unidad",
+      "timestamp": {
+        "title": "Momento de captura",
+        "description": "¿De dónde viene el momento en que se capturó un valor? Puede ser un texto ISO 8601 o un tiempo Unix en segundos o milisegundos. Si viene de otra entidad, el valor y el momento se emparejan cuando ambos llevan 5 segundos sin cambiar.",
+        "menu_options": {
+          "source_attribute": "Atributo del sensor de origen",
+          "entity_state": "Estado de otra entidad",
+          "entity_attribute": "Atributo de otra entidad",
+          "entity_change": "Último cambio de otra entidad",
+          "template": "Plantilla",
+          "delay": "Momento de recepción menos un retraso"
+        }
+      },
+      "source_attribute": {
+        "title": "Atributo del sensor de origen",
         "data": {
-          "timestamp_attribute": "Atributo de marca de tiempo",
+          "timestamp_attribute": "Atributo de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo que contiene el momento en que se capturó el valor del sensor de origen."
+        }
+      },
+      "entity_state": {
+        "title": "Estado de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_entity": "Entidad cuyo estado es el momento de captura, como un sensor de marca de tiempo."
+        }
+      },
+      "entity_attribute": {
+        "title": "Atributo de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad"
+        },
+        "data_description": {
+          "timestamp_entity": "Entidad con un atributo que contiene el momento de captura. El atributo se elige a continuación."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Atributo de otra entidad",
+        "data": {
+          "timestamp_attribute": "Atributo de marca de tiempo"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo que contiene el momento de captura."
+        }
+      },
+      "entity_change": {
+        "title": "Último cambio de otra entidad",
+        "data": {
+          "timestamp_entity": "Entidad",
+          "timestamp_property": "Momento"
+        },
+        "data_description": {
+          "timestamp_property": "Último cambio: cuando cambió su estado por última vez. Última actualización: cuando cambió su estado o un atributo por última vez. Último informe: cuando informó por última vez, aunque no hubiera cambios."
+        }
+      },
+      "template": {
+        "title": "Plantilla",
+        "data": {
+          "timestamp_template": "Plantilla"
+        },
+        "data_description": {
+          "timestamp_template": "Devuelve el momento de captura. La variable `source` contiene el ID de entidad del sensor de origen, y `now()` da el momento en que se recibió un cambio."
+        }
+      },
+      "delay": {
+        "title": "Momento de recepción menos un retraso",
+        "data": {
+          "timestamp_delay": "Retraso"
+        },
+        "data_description": {
+          "timestamp_delay": "El momento de captura es el momento en que se recibió un valor, menos este retraso."
+        }
+      },
+      "details": {
+        "title": "Unidad y clases",
+        "data": {
           "unit_of_measurement": "Unidad de medida",
           "device_class": "Clase de dispositivo",
           "state_class": "Clase de estado"
         },
         "data_description": {
-          "timestamp_attribute": "Atributo del sensor de origen que contiene el momento en que se capturó su valor.",
           "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
         }
       }
     },
     "error": {
       "unit_not_valid": "La unidad de medida no corresponde a la clase de dispositivo.",
-      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo."
+      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo.",
+      "entity_is_source": "El estado del sensor de origen es el propio valor. Elige otra entidad.",
+      "template_invalid": "La plantilla no se puede procesar.",
+      "template_not_a_time": "La plantilla no devuelve un momento."
+    }
+  },
+  "selector": {
+    "timestamp_property": {
+      "options": {
+        "last_changed": "Último cambio",
+        "last_updated": "Última actualización",
+        "last_reported": "Último informe"
+      }
     }
   }
 }

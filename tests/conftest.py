@@ -1,6 +1,7 @@
 """Fixtures of the Backdated Sensor tests."""
 
 from datetime import datetime
+from typing import Any
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -49,7 +50,11 @@ def report(hass: HomeAssistant, value: str, captured: datetime | None) -> None:
     hass.states.async_set(SOURCE, value, attributes)
 
 
-async def setup_sensor(hass: HomeAssistant) -> None:
-    """Set up the backdated sensor of CONFIG."""
-    assert await async_setup_component(hass, "sensor", CONFIG)
+async def setup_sensor(hass: HomeAssistant, **capture_time: Any) -> None:
+    """Set up the backdated sensor of CONFIG, with other capture time options if given."""
+    config = dict(CONFIG["sensor"][0])
+    if capture_time:
+        del config["timestamp_attribute"]
+        config.update(capture_time)
+    assert await async_setup_component(hass, "sensor", {"sensor": [config]})
     await hass.async_block_till_done()

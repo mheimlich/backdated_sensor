@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "创建回溯时间戳传感器",
-        "description": "镜像一个数值传感器，并按其某个属性给出的时间记录每个值（例如汽车采集电池电量的时间），而不是按 Home Assistant 收到该值的时间记录。",
+        "description": "镜像一个数值传感器，并按每个值的采集时间（例如汽车测量电池电量的时间）记录，而不是按 Home Assistant 收到该值的时间记录。",
         "data": {
           "name": "名称",
           "source": "源传感器"
@@ -13,31 +13,108 @@
           "source": "要镜像其数值状态的传感器。"
         }
       },
+      "timestamp": {
+        "title": "采集时间",
+        "description": "值的采集时间从何而来？时间可以是 ISO 8601 文本，也可以是以秒或毫秒为单位的 Unix 时间。若时间来自另一个实体，则在两者都保持 5 秒不变后再将值与时间配对。",
+        "menu_options": {
+          "source_attribute": "源传感器的属性",
+          "entity_state": "另一个实体的状态",
+          "entity_attribute": "另一个实体的属性",
+          "entity_change": "另一个实体的上次变化",
+          "template": "模板",
+          "delay": "接收时间减去延迟"
+        }
+      },
+      "source_attribute": {
+        "title": "源传感器的属性",
+        "data": {
+          "timestamp_attribute": "时间戳属性"
+        },
+        "data_description": {
+          "timestamp_attribute": "包含源传感器值采集时间的属性。"
+        }
+      },
+      "entity_state": {
+        "title": "另一个实体的状态",
+        "data": {
+          "timestamp_entity": "时间戳实体"
+        },
+        "data_description": {
+          "timestamp_entity": "其状态即为采集时间的实体，例如时间戳传感器。"
+        }
+      },
+      "entity_attribute": {
+        "title": "另一个实体的属性",
+        "data": {
+          "timestamp_entity": "实体"
+        },
+        "data_description": {
+          "timestamp_entity": "具有包含采集时间的属性的实体。接下来选择该属性。"
+        }
+      },
+      "entity_attribute_name": {
+        "title": "另一个实体的属性",
+        "data": {
+          "timestamp_attribute": "时间戳属性"
+        },
+        "data_description": {
+          "timestamp_attribute": "包含采集时间的属性。"
+        }
+      },
+      "entity_change": {
+        "title": "另一个实体的上次变化",
+        "data": {
+          "timestamp_entity": "实体",
+          "timestamp_property": "时间"
+        },
+        "data_description": {
+          "timestamp_property": "上次变化：其状态上次变化的时间。上次更新：其状态或某个属性上次变化的时间。上次报告：其上次报告的时间，即使没有变化。"
+        }
+      },
+      "template": {
+        "title": "模板",
+        "data": {
+          "timestamp_template": "模板"
+        },
+        "data_description": {
+          "timestamp_template": "渲染出采集时间。变量 `source` 包含源传感器的实体 ID，`now()` 给出收到变化的时间。"
+        }
+      },
+      "delay": {
+        "title": "接收时间减去延迟",
+        "data": {
+          "timestamp_delay": "延迟"
+        },
+        "data_description": {
+          "timestamp_delay": "采集时间为收到值的时间减去此延迟。"
+        }
+      },
       "details": {
-        "title": "采集时间和单位",
+        "title": "单位和类别",
         "description": "单位和类别取自源传感器，可以更改。",
         "data": {
-          "timestamp_attribute": "时间戳属性",
           "unit_of_measurement": "度量单位",
           "device_class": "设备类别",
           "state_class": "状态类"
         },
         "data_description": {
-          "timestamp_attribute": "源传感器中包含其值采集时间的属性。",
           "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
         }
       }
     },
     "error": {
       "unit_not_valid": "度量单位与设备类别不匹配。",
-      "state_class_not_valid": "状态类与设备类别不匹配。"
+      "state_class_not_valid": "状态类与设备类别不匹配。",
+      "entity_is_source": "源传感器的状态就是值本身。请选择另一个实体。",
+      "template_invalid": "无法渲染该模板。",
+      "template_not_a_time": "该模板未渲染出时间。"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "更改回溯时间戳传感器",
-        "description": "更换源传感器后，当前值会保留，直到该传感器报告采集时间更晚的值。",
+        "description": "更改后，当前值会保留，直到收到采集时间更晚的值。",
         "data": {
           "source": "源传感器"
         },
@@ -45,23 +122,109 @@
           "source": "要镜像其数值状态的传感器。"
         }
       },
-      "details": {
-        "title": "采集时间和单位",
+      "timestamp": {
+        "title": "采集时间",
+        "description": "值的采集时间从何而来？时间可以是 ISO 8601 文本，也可以是以秒或毫秒为单位的 Unix 时间。若时间来自另一个实体，则在两者都保持 5 秒不变后再将值与时间配对。",
+        "menu_options": {
+          "source_attribute": "源传感器的属性",
+          "entity_state": "另一个实体的状态",
+          "entity_attribute": "另一个实体的属性",
+          "entity_change": "另一个实体的上次变化",
+          "template": "模板",
+          "delay": "接收时间减去延迟"
+        }
+      },
+      "source_attribute": {
+        "title": "源传感器的属性",
         "data": {
-          "timestamp_attribute": "时间戳属性",
+          "timestamp_attribute": "时间戳属性"
+        },
+        "data_description": {
+          "timestamp_attribute": "包含源传感器值采集时间的属性。"
+        }
+      },
+      "entity_state": {
+        "title": "另一个实体的状态",
+        "data": {
+          "timestamp_entity": "时间戳实体"
+        },
+        "data_description": {
+          "timestamp_entity": "其状态即为采集时间的实体，例如时间戳传感器。"
+        }
+      },
+      "entity_attribute": {
+        "title": "另一个实体的属性",
+        "data": {
+          "timestamp_entity": "实体"
+        },
+        "data_description": {
+          "timestamp_entity": "具有包含采集时间的属性的实体。接下来选择该属性。"
+        }
+      },
+      "entity_attribute_name": {
+        "title": "另一个实体的属性",
+        "data": {
+          "timestamp_attribute": "时间戳属性"
+        },
+        "data_description": {
+          "timestamp_attribute": "包含采集时间的属性。"
+        }
+      },
+      "entity_change": {
+        "title": "另一个实体的上次变化",
+        "data": {
+          "timestamp_entity": "实体",
+          "timestamp_property": "时间"
+        },
+        "data_description": {
+          "timestamp_property": "上次变化：其状态上次变化的时间。上次更新：其状态或某个属性上次变化的时间。上次报告：其上次报告的时间，即使没有变化。"
+        }
+      },
+      "template": {
+        "title": "模板",
+        "data": {
+          "timestamp_template": "模板"
+        },
+        "data_description": {
+          "timestamp_template": "渲染出采集时间。变量 `source` 包含源传感器的实体 ID，`now()` 给出收到变化的时间。"
+        }
+      },
+      "delay": {
+        "title": "接收时间减去延迟",
+        "data": {
+          "timestamp_delay": "延迟"
+        },
+        "data_description": {
+          "timestamp_delay": "采集时间为收到值的时间减去此延迟。"
+        }
+      },
+      "details": {
+        "title": "单位和类别",
+        "data": {
           "unit_of_measurement": "度量单位",
           "device_class": "设备类别",
           "state_class": "状态类"
         },
         "data_description": {
-          "timestamp_attribute": "源传感器中包含其值采集时间的属性。",
           "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
         }
       }
     },
     "error": {
       "unit_not_valid": "度量单位与设备类别不匹配。",
-      "state_class_not_valid": "状态类与设备类别不匹配。"
+      "state_class_not_valid": "状态类与设备类别不匹配。",
+      "entity_is_source": "源传感器的状态就是值本身。请选择另一个实体。",
+      "template_invalid": "无法渲染该模板。",
+      "template_not_a_time": "该模板未渲染出时间。"
+    }
+  },
+  "selector": {
+    "timestamp_property": {
+      "options": {
+        "last_changed": "上次变化",
+        "last_updated": "上次更新",
+        "last_reported": "上次报告"
+      }
     }
   }
 }

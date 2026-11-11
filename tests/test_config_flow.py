@@ -24,13 +24,19 @@ from .conftest import ENTITY, SOURCE, report
 NOW = datetime(2026, 11, 10, 12, 20, tzinfo=UTC)
 CAPTURED = NOW - timedelta(hours=6)
 
+TIME_ENTITY = "sensor.car_reported"
+
 DETAILS = {
-    "timestamp_attribute": "data_captured_at",
     "unit_of_measurement": "%",
     "device_class": "battery",
     "state_class": "measurement",
 }
-OPTIONS = {"name": "Car battery captured", "source": SOURCE, **DETAILS}
+OPTIONS = {
+    "name": "Car battery captured",
+    "source": SOURCE,
+    "timestamp_attribute": "data_captured_at",
+    **DETAILS,
+}
 
 
 @pytest.fixture(autouse=True)
@@ -77,39 +83,52 @@ def _suggested(result: FlowResult) -> dict[str, Any]:
     }
 
 
-async def _start_details(hass: HomeAssistant) -> FlowResult:
-    """Run the first step of the setup dialog."""
+def _selector(result: FlowResult, name: str) -> Any:
+    """Return the selector of a form field."""
+    return next(
+        selector
+        for key, selector in result["data_schema"].schema.items()
+        if key == name
+    )
+
+
+async def _start(hass: HomeAssistant) -> FlowResult:
+    """Run the first step of the setup dialog, which leads to the capture time menu."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
-    return await hass.config_entries.flow.async_configure(
+    result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": OPTIONS["name"], "source": SOURCE}
+    )
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "timestamp"
+    return result
+
+
+async def _choose(hass: HomeAssistant, result: FlowResult, kind: str) -> FlowResult:
+    """Choose a kind of capture time in the menu."""
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": kind}
     )
 
 
 async def test_the_dialog_creates_a_sensor_on_the_source_device(
     recorder_mock: Recorder, hass: HomeAssistant, source_device: dr.DeviceEntry
 ) -> None:
-    """The second step offers the source's attributes and suggests its unit and classes."""
+    """The source's attributes are offered, and its unit and classes suggested."""
     report(hass, "30", CAPTURED)
-    result = await _start_details(hass)
+    result = await _choose(hass, await _start(hass), "source_attribute")
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "details"
-    assert _suggested(result) == {
-        "unit_of_measurement": "%",
-        "device_class": "battery",
-        "state_class": "measurement",
-    }
-    attribute = next(
-        selector
-        for key, selector in result["data_schema"].schema.items()
-        if key == "timestamp_attribute"
+    assert result["step_id"] == "source_attribute"
+    assert _selector(result, "timestamp_attribute").config["entity_id"] == SOURCE
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"timestamp_attribute": "data_captured_at"}
     )
-    assert attribute.config["entity_id"] == SOURCE
 
+    assert result["step_id"] == "details"
+    assert _suggested(result) == DETAILS
     result = await hass.config_entries.flow.async_configure(result["flow_id"], DETAILS)
     await hass.async_block_till_done()
 
@@ -125,6 +144,107 @@ async def test_the_dialog_creates_a_sensor_on_the_source_device(
     assert registered.unique_id == entry.entry_id
     assert registered.config_entry_id == entry.entry_id
     assert registered.device_id == source_device.id
+
+
+@pytest.mark.parametrize(
+    ("kind", "inputs", "options"),
+    [
+        (
+            "entity_state",
+            [{"timestamp_entity": TIME_ENTITY}],
+            {"timestamp_entity": TIME_ENTITY},
+        ),
+        (
+            "entity_attribute",
+            [{"timestamp_entity": TIME_ENTITY}, {"timestamp_attribute": "at"}],
+            {"timestamp_entity": TIME_ENTITY, "timestamp_attribute": "at"},
+        ),
+        (
+            "entity_change",
+            [{"timestamp_entity": TIME_ENTITY, "timestamp_property": "last_updated"}],
+            {"timestamp_entity": TIME_ENTITY, "timestamp_property": "last_updated"},
+        ),
+        (
+            "template",
+            [{"timestamp_template": "{{ states('sensor.car_reported') }}"}],
+            {"timestamp_template": "{{ states('sensor.car_reported') }}"},
+        ),
+        (
+            "delay",
+            [{"timestamp_delay": {"hours": 0, "minutes": 15, "seconds": 0}}],
+            {"timestamp_delay": {"hours": 0, "minutes": 15, "seconds": 0}},
+        ),
+    ],
+)
+async def test_each_kind_of_capture_time_creates_a_sensor(
+    recorder_mock: Recorder,
+    hass: HomeAssistant,
+    kind: str,
+    inputs: list[dict[str, Any]],
+    options: dict[str, Any],
+) -> None:
+    """The options hold what the kind's steps asked for, and the sensor is set up."""
+    report(hass, "30", CAPTURED)
+    hass.states.async_set(TIME_ENTITY, CAPTURED.isoformat(), {"at": "x"})
+    result = await _choose(hass, await _start(hass), kind)
+    for user_input in inputs:
+        assert result["type"] is FlowResultType.FORM
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input
+        )
+    if kind == "entity_attribute":
+        assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], DETAILS)
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].options == {
+        "name": OPTIONS["name"],
+        "source": SOURCE,
+        **options,
+        **DETAILS,
+    }
+    assert hass.states.get(ENTITY) is not None
+
+
+async def test_the_attribute_of_another_entity_is_chosen_from_its_attributes(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """The second step lists the attributes of the entity chosen in the first."""
+    result = await _choose(hass, await _start(hass), "entity_attribute")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"timestamp_entity": TIME_ENTITY}
+    )
+
+    assert result["step_id"] == "entity_attribute_name"
+    assert _selector(result, "timestamp_attribute").config["entity_id"] == TIME_ENTITY
+
+
+@pytest.mark.parametrize(
+    ("kind", "user_input", "error"),
+    [
+        ("entity_state", {"timestamp_entity": SOURCE}, "entity_is_source"),
+        ("template", {"timestamp_template": "{{ 1 / 0 }}"}, "template_invalid"),
+        ("template", {"timestamp_template": "soon"}, "template_not_a_time"),
+    ],
+)
+async def test_a_capture_time_that_cannot_work_is_refused(
+    recorder_mock: Recorder,
+    hass: HomeAssistant,
+    kind: str,
+    user_input: dict[str, str],
+    error: str,
+) -> None:
+    """The form is shown again with an error."""
+    report(hass, "30", CAPTURED)
+    result = await _choose(hass, await _start(hass), kind)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == kind
+    assert result["errors"] == {"base": error}
 
 
 @pytest.mark.parametrize(
@@ -149,10 +269,11 @@ async def test_details_that_do_not_fit_the_device_class_are_refused(
 ) -> None:
     """The form is shown again with an error."""
     report(hass, "30", CAPTURED)
-    result = await _start_details(hass)
+    result = await _choose(hass, await _start(hass), "source_attribute")
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"timestamp_attribute": "data_captured_at", **details}
+        result["flow_id"], {"timestamp_attribute": "data_captured_at"}
     )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], details)
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "details"
@@ -172,6 +293,14 @@ async def test_changed_options_reload_the_sensor_with_its_value(
     assert _suggested(result) == {"source": SOURCE}
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"source": SOURCE}
+    )
+    assert result["step_id"] == "timestamp"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "source_attribute"}
+    )
+    assert _suggested(result) == {"timestamp_attribute": "data_captured_at"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"timestamp_attribute": "data_captured_at"}
     )
     assert result["step_id"] == "details"
     assert _suggested(result) == DETAILS
@@ -208,6 +337,48 @@ async def test_changed_options_reload_the_sensor_with_its_value(
         ("unavailable", reloaded),
         ("30", reloaded + timedelta(milliseconds=1)),
     ]
+
+
+async def test_another_kind_of_capture_time_drops_the_previous_options(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """Only the options of the chosen kind remain."""
+    report(hass, "30", CAPTURED)
+    hass.states.async_set(TIME_ENTITY, CAPTURED.isoformat(), {"at": "x"})
+    entry = await _set_up_entry(hass)
+
+    async def change(kind: str, *inputs: dict[str, Any]) -> None:
+        options = hass.config_entries.options
+        result = await options.async_init(entry.entry_id)
+        result = await options.async_configure(result["flow_id"], {"source": SOURCE})
+        result = await options.async_configure(
+            result["flow_id"], {"next_step_id": kind}
+        )
+        for user_input in (*inputs, DETAILS):
+            result = await options.async_configure(result["flow_id"], user_input)
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+    await change(
+        "entity_attribute",
+        {"timestamp_entity": TIME_ENTITY},
+        {"timestamp_attribute": "at"},
+    )
+    assert entry.options == {
+        "name": OPTIONS["name"],
+        "source": SOURCE,
+        "timestamp_entity": TIME_ENTITY,
+        "timestamp_attribute": "at",
+        **DETAILS,
+    }
+
+    await change("template", {"timestamp_template": "{{ now() }}"})
+    assert entry.options == {
+        "name": OPTIONS["name"],
+        "source": SOURCE,
+        "timestamp_template": "{{ now() }}",
+        **DETAILS,
+    }
 
 
 async def test_the_sensor_follows_its_renamed_source(

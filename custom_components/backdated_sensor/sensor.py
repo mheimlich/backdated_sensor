@@ -1,4 +1,4 @@
-"""Sensor that records another sensor's value at the time given by one of its attributes."""
+"""Sensor that records another sensor's value at the time the value was captured."""
 
 from __future__ import annotations
 
@@ -45,6 +45,7 @@ from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
 )
 from homeassistant.helpers.event import (
+    async_call_later,
     async_track_point_in_utc_time,
     async_track_state_change_event,
 )
@@ -56,7 +57,17 @@ from homeassistant.helpers.restore_state import (
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import dt as dt_util
 
-from .const import ATTR_CAPTURED_AT, CONF_SOURCE, CONF_TIMESTAMP_ATTRIBUTE
+from .capture_time import capture_time_from, kind_of, parse_time
+from .const import (
+    ATTR_CAPTURED_AT,
+    CONF_SOURCE,
+    CONF_TIMESTAMP_ATTRIBUTE,
+    CONF_TIMESTAMP_DELAY,
+    CONF_TIMESTAMP_ENTITY,
+    CONF_TIMESTAMP_PROPERTY,
+    CONF_TIMESTAMP_TEMPLATE,
+    PROPERTIES,
+)
 from .statistics import async_correct_hourly_statistics, hour_start
 
 _LOGGER = logging.getLogger(__name__)
@@ -67,23 +78,50 @@ CORRECTION_DELAY = timedelta(minutes=15)
 # Spacing that keeps a state from sharing its time with the row recorded before it.
 MIN_STEP = 0.001
 
+# How long the source and the entities giving the time have to stay unchanged before
+# the value is paired with the time. An integration writes the states of one report
+# within a fraction of a second.
+SETTLE_DELAY = 5
+
+
+def _template(value: Any) -> str:
+    """Check the syntax of a template and keep its text."""
+    cv.template(value)
+    return cv.string(value)
+
+
+def _one_capture_time(config: dict[str, Any]) -> dict[str, Any]:
+    """Check that the options give the capture time in exactly one way."""
+    kind_of(config)
+    return config
+
+
 SENSOR_OPTIONS = {
     probatio.Required(CONF_SOURCE): cv.entity_id,
-    probatio.Required(CONF_TIMESTAMP_ATTRIBUTE): cv.string,
+    probatio.Optional(CONF_TIMESTAMP_ATTRIBUTE): cv.string,
+    probatio.Optional(CONF_TIMESTAMP_ENTITY): cv.entity_id,
+    probatio.Optional(CONF_TIMESTAMP_PROPERTY): probatio.In(PROPERTIES),
+    probatio.Optional(CONF_TIMESTAMP_TEMPLATE): _template,
+    probatio.Optional(CONF_TIMESTAMP_DELAY): cv.positive_time_period,
     probatio.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
     probatio.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
     probatio.Optional(CONF_STATE_CLASS): STATE_CLASSES_SCHEMA,
 }
 
-PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
-    {
-        probatio.Required(CONF_NAME): cv.string,
-        probatio.Optional(CONF_UNIQUE_ID): cv.string,
-        **SENSOR_OPTIONS,
-    }
+PLATFORM_SCHEMA = probatio.All(
+    SENSOR_PLATFORM_SCHEMA.extend(
+        {
+            probatio.Required(CONF_NAME): cv.string,
+            probatio.Optional(CONF_UNIQUE_ID): cv.string,
+            **SENSOR_OPTIONS,
+        }
+    ),
+    _one_capture_time,
 )
 
-ENTRY_OPTIONS_SCHEMA = probatio.Schema(SENSOR_OPTIONS, extra=probatio.REMOVE_EXTRA)
+ENTRY_OPTIONS_SCHEMA = probatio.All(
+    probatio.Schema(SENSOR_OPTIONS, extra=probatio.REMOVE_EXTRA), _one_capture_time
+)
 
 
 async def async_setup_platform(
@@ -133,12 +171,14 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
         self._attr_device_class = config.get(CONF_DEVICE_CLASS)
         self._attr_state_class = config.get(CONF_STATE_CLASS)
         self._source: str = config[CONF_SOURCE]
-        self._timestamp_attribute: str = config[CONF_TIMESTAMP_ATTRIBUTE]
+        self._capture_time = capture_time_from(config)
         self._captured: datetime | None = None
         self._written = 0.0
         self._value_taken_over = False
         self._correct_from: datetime | None = None
         self._unsub_correction: CALLBACK_TYPE | None = None
+        self._unsub_settle: CALLBACK_TYPE | None = None
+        self._unsub_capture_time: CALLBACK_TYPE | None = None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
@@ -160,7 +200,7 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
         )
 
     async def async_added_to_hass(self) -> None:
-        """Restore the last value and follow the source."""
+        """Restore the last value and follow the source and the capture time."""
         await super().async_added_to_hass()
         if (extra := await self.async_get_last_extra_data()) is not None:
             self._restore(extra.as_dict())
@@ -170,10 +210,13 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
                 self.hass, self._source, self._async_source_changed
             )
         )
-        self.async_on_remove(self._cancel_correction)
+        self._unsub_capture_time = self._capture_time.track(
+            self.hass, self._source, self._async_changed
+        )
+        self.async_on_remove(self._cancel_timers)
         self.async_on_remove(
             self.hass.bus.async_listen(
-                EVENT_HOMEASSISTANT_STOP, self._async_cancel_correction_at_stop
+                EVENT_HOMEASSISTANT_STOP, self._async_cancel_timers_at_stop
             )
         )
         if self._correct_from is not None:
@@ -181,19 +224,19 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
 
     def _restore(self, data: dict[str, Any]) -> None:
         value = data.get("native_value")
-        captured = _parse_timestamp(data.get("captured"))
+        captured = parse_time(data.get("captured"))
         if isinstance(value, int | float) and captured is not None:
             self._attr_native_value = value
             self._captured = captured
         if isinstance(written := data.get("written"), int | float):
             self._written = float(written)
-        self._correct_from = _parse_timestamp(data.get("correct_statistics_from"))
+        self._correct_from = parse_time(data.get("correct_statistics_from"))
 
     def _take_over(self, state: State | None) -> bool:
         """Take the source's value if its capture time is later than the current one."""
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return False
-        captured = _parse_timestamp(state.attributes.get(self._timestamp_attribute))
+        captured = self._capture_time.read(self.hass, state)
         if captured is None or (
             self._captured is not None and captured <= self._captured
         ):
@@ -212,8 +255,28 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
         return True
 
     @callback
-    def _async_source_changed(self, event: Event[EventStateChangedData]) -> None:
-        if self._take_over(event.data["new_state"]):
+    def _async_source_changed(self, _event: Event[EventStateChangedData]) -> None:
+        self._async_changed()
+
+    @callback
+    def _async_changed(self) -> None:
+        """Take the source's value now, or once the other entities have settled."""
+        if not self._capture_time.waits(self._source):
+            self._async_take_over_current()
+            return
+        self._cancel_settle()
+        self._unsub_settle = async_call_later(
+            self.hass, SETTLE_DELAY, self._async_settled
+        )
+
+    @callback
+    def _async_settled(self, _now: datetime) -> None:
+        self._unsub_settle = None
+        self._async_take_over_current()
+
+    @callback
+    def _async_take_over_current(self) -> None:
+        if self._take_over(self.hass.states.get(self._source)):
             self.async_write_ha_state()
 
     @callback
@@ -284,9 +347,29 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
             self._unsub_correction = None
 
     @callback
-    def _async_cancel_correction_at_stop(self, _event: Event) -> None:
-        """Leave a pending correction to the restore data, which keeps its start."""
+    def _cancel_settle(self) -> None:
+        if self._unsub_settle is not None:
+            self._unsub_settle()
+            self._unsub_settle = None
+
+    @callback
+    def _cancel_timers(self) -> None:
+        """Cancel the timers and the capture time's tracking, which may hold one."""
         self._cancel_correction()
+        self._cancel_settle()
+        if self._unsub_capture_time is not None:
+            self._unsub_capture_time()
+            self._unsub_capture_time = None
+
+    @callback
+    def _async_cancel_timers_at_stop(self, _event: Event) -> None:
+        """Cancel the timers, whose work the next start picks up.
+
+        The restore data keeps the start of a pending correction, and the sensor
+        takes the source's value when it is set up again. A template reading `now()`
+        keeps a timer of its own.
+        """
+        self._cancel_timers()
 
     async def _async_correct_statistics(self, _now: datetime) -> None:
         self._unsub_correction = None
@@ -306,14 +389,6 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
         _LOGGER.debug(
             "Corrected %d hourly statistics of %s from %s", count, self.entity_id, start
         )
-
-
-def _parse_timestamp(value: Any) -> datetime | None:
-    if isinstance(value, datetime):
-        return dt_util.as_utc(value)
-    if isinstance(value, str) and (moment := dt_util.parse_datetime(value)):
-        return dt_util.as_utc(moment)
-    return None
 
 
 def _parse_number(value: str) -> int | float | None:

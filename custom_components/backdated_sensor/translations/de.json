@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Rückdatierten Sensor erstellen",
-        "description": "Spiegelt einen numerischen Sensor und zeichnet jeden Wert zu dem Zeitpunkt auf, den eines seiner Attribute angibt, zum Beispiel wann ein Auto seinen Akkustand erfasst hat, statt wann Home Assistant ihn empfangen hat.",
+        "description": "Spiegelt einen numerischen Sensor und zeichnet jeden Wert zu dem Zeitpunkt auf, zu dem er erfasst wurde, zum Beispiel wann ein Auto seinen Akkustand gemessen hat, statt wann Home Assistant ihn empfangen hat.",
         "data": {
           "name": "Name",
           "source": "Quellsensor"
@@ -13,31 +13,108 @@
           "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
         }
       },
+      "timestamp": {
+        "title": "Erfassungszeit",
+        "description": "Woher kommt der Zeitpunkt, zu dem ein Wert erfasst wurde? Ein Zeitpunkt kann ein ISO-8601-Text oder eine Unix-Zeit in Sekunden oder Millisekunden sein. Kommt er von einer anderen Entität, werden Wert und Zeitpunkt zusammengeführt, sobald sich beide 5 Sekunden lang nicht geändert haben.",
+        "menu_options": {
+          "source_attribute": "Attribut des Quellsensors",
+          "entity_state": "Zustand einer anderen Entität",
+          "entity_attribute": "Attribut einer anderen Entität",
+          "entity_change": "Letzte Änderung einer anderen Entität",
+          "template": "Template",
+          "delay": "Empfangszeit abzüglich einer Verzögerung"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribut des Quellsensors",
+        "data": {
+          "timestamp_attribute": "Zeitstempel-Attribut"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut, das den Zeitpunkt enthält, zu dem der Wert des Quellsensors erfasst wurde."
+        }
+      },
+      "entity_state": {
+        "title": "Zustand einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Zeitstempel-Entität"
+        },
+        "data_description": {
+          "timestamp_entity": "Entität, deren Zustand die Erfassungszeit ist, etwa ein Zeitstempel-Sensor."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribut einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Entität"
+        },
+        "data_description": {
+          "timestamp_entity": "Entität mit einem Attribut, das die Erfassungszeit enthält. Das Attribut wird als Nächstes gewählt."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribut einer anderen Entität",
+        "data": {
+          "timestamp_attribute": "Zeitstempel-Attribut"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut, das die Erfassungszeit enthält."
+        }
+      },
+      "entity_change": {
+        "title": "Letzte Änderung einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Entität",
+          "timestamp_property": "Zeitpunkt"
+        },
+        "data_description": {
+          "timestamp_property": "Zuletzt geändert: als sich ihr Zustand zuletzt geändert hat. Zuletzt aktualisiert: als sich ihr Zustand oder ein Attribut zuletzt geändert hat. Zuletzt gemeldet: als sie sich zuletzt gemeldet hat, auch ohne Änderung."
+        }
+      },
+      "template": {
+        "title": "Template",
+        "data": {
+          "timestamp_template": "Template"
+        },
+        "data_description": {
+          "timestamp_template": "Gibt die Erfassungszeit aus. Die Variable `source` enthält die Entitäts-ID des Quellsensors, und `now()` liefert den Zeitpunkt, zu dem eine Änderung empfangen wurde."
+        }
+      },
+      "delay": {
+        "title": "Empfangszeit abzüglich einer Verzögerung",
+        "data": {
+          "timestamp_delay": "Verzögerung"
+        },
+        "data_description": {
+          "timestamp_delay": "Die Erfassungszeit ist der Zeitpunkt, zu dem ein Wert empfangen wurde, abzüglich dieser Verzögerung."
+        }
+      },
       "details": {
-        "title": "Erfassungszeit und Einheit",
+        "title": "Einheit und Klassen",
         "description": "Einheit und Klassen sind vom Quellsensor übernommen und können geändert werden.",
         "data": {
-          "timestamp_attribute": "Zeitstempel-Attribut",
           "unit_of_measurement": "Maßeinheit",
           "device_class": "Geräteklasse",
           "state_class": "Zustandsklasse"
         },
         "data_description": {
-          "timestamp_attribute": "Attribut des Quellsensors, das den Zeitpunkt enthält, zu dem sein Wert erfasst wurde.",
           "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
         }
       }
     },
     "error": {
       "unit_not_valid": "Die Maßeinheit passt nicht zur Geräteklasse.",
-      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse."
+      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse.",
+      "entity_is_source": "Der Zustand des Quellsensors ist der Wert selbst. Wähle eine andere Entität.",
+      "template_invalid": "Das Template kann nicht ausgewertet werden.",
+      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Rückdatierten Sensor ändern",
-        "description": "Mit einem anderen Quellsensor bleibt der aktuelle Wert, bis dieser Sensor einen später erfassten Wert meldet.",
+        "description": "Nach einer Änderung bleibt der aktuelle Wert, bis ein später erfasster Wert eintrifft.",
         "data": {
           "source": "Quellsensor"
         },
@@ -45,23 +122,109 @@
           "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
         }
       },
-      "details": {
-        "title": "Erfassungszeit und Einheit",
+      "timestamp": {
+        "title": "Erfassungszeit",
+        "description": "Woher kommt der Zeitpunkt, zu dem ein Wert erfasst wurde? Ein Zeitpunkt kann ein ISO-8601-Text oder eine Unix-Zeit in Sekunden oder Millisekunden sein. Kommt er von einer anderen Entität, werden Wert und Zeitpunkt zusammengeführt, sobald sich beide 5 Sekunden lang nicht geändert haben.",
+        "menu_options": {
+          "source_attribute": "Attribut des Quellsensors",
+          "entity_state": "Zustand einer anderen Entität",
+          "entity_attribute": "Attribut einer anderen Entität",
+          "entity_change": "Letzte Änderung einer anderen Entität",
+          "template": "Template",
+          "delay": "Empfangszeit abzüglich einer Verzögerung"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribut des Quellsensors",
         "data": {
-          "timestamp_attribute": "Zeitstempel-Attribut",
+          "timestamp_attribute": "Zeitstempel-Attribut"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut, das den Zeitpunkt enthält, zu dem der Wert des Quellsensors erfasst wurde."
+        }
+      },
+      "entity_state": {
+        "title": "Zustand einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Zeitstempel-Entität"
+        },
+        "data_description": {
+          "timestamp_entity": "Entität, deren Zustand die Erfassungszeit ist, etwa ein Zeitstempel-Sensor."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribut einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Entität"
+        },
+        "data_description": {
+          "timestamp_entity": "Entität mit einem Attribut, das die Erfassungszeit enthält. Das Attribut wird als Nächstes gewählt."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribut einer anderen Entität",
+        "data": {
+          "timestamp_attribute": "Zeitstempel-Attribut"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut, das die Erfassungszeit enthält."
+        }
+      },
+      "entity_change": {
+        "title": "Letzte Änderung einer anderen Entität",
+        "data": {
+          "timestamp_entity": "Entität",
+          "timestamp_property": "Zeitpunkt"
+        },
+        "data_description": {
+          "timestamp_property": "Zuletzt geändert: als sich ihr Zustand zuletzt geändert hat. Zuletzt aktualisiert: als sich ihr Zustand oder ein Attribut zuletzt geändert hat. Zuletzt gemeldet: als sie sich zuletzt gemeldet hat, auch ohne Änderung."
+        }
+      },
+      "template": {
+        "title": "Template",
+        "data": {
+          "timestamp_template": "Template"
+        },
+        "data_description": {
+          "timestamp_template": "Gibt die Erfassungszeit aus. Die Variable `source` enthält die Entitäts-ID des Quellsensors, und `now()` liefert den Zeitpunkt, zu dem eine Änderung empfangen wurde."
+        }
+      },
+      "delay": {
+        "title": "Empfangszeit abzüglich einer Verzögerung",
+        "data": {
+          "timestamp_delay": "Verzögerung"
+        },
+        "data_description": {
+          "timestamp_delay": "Die Erfassungszeit ist der Zeitpunkt, zu dem ein Wert empfangen wurde, abzüglich dieser Verzögerung."
+        }
+      },
+      "details": {
+        "title": "Einheit und Klassen",
+        "data": {
           "unit_of_measurement": "Maßeinheit",
           "device_class": "Geräteklasse",
           "state_class": "Zustandsklasse"
         },
         "data_description": {
-          "timestamp_attribute": "Attribut des Quellsensors, das den Zeitpunkt enthält, zu dem sein Wert erfasst wurde.",
           "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
         }
       }
     },
     "error": {
       "unit_not_valid": "Die Maßeinheit passt nicht zur Geräteklasse.",
-      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse."
+      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse.",
+      "entity_is_source": "Der Zustand des Quellsensors ist der Wert selbst. Wähle eine andere Entität.",
+      "template_invalid": "Das Template kann nicht ausgewertet werden.",
+      "template_not_a_time": "Das Template ergibt keinen Zeitpunkt."
+    }
+  },
+  "selector": {
+    "timestamp_property": {
+      "options": {
+        "last_changed": "Zuletzt geändert",
+        "last_updated": "Zuletzt aktualisiert",
+        "last_reported": "Zuletzt gemeldet"
+      }
     }
   }
 }

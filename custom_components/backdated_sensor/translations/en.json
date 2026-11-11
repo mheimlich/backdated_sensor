@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Create a backdated sensor",
-        "description": "Mirrors a numeric sensor and records each value at the time one of its attributes gives, for example when a car captured its battery level, instead of when Home Assistant received it.",
+        "description": "Mirrors a numeric sensor and records each value at the time it was captured, for example when a car measured its battery level, instead of when Home Assistant received it.",
         "data": {
           "name": "Name",
           "source": "Source sensor"
@@ -13,31 +13,108 @@
           "source": "Sensor whose numeric state is mirrored."
         }
       },
+      "timestamp": {
+        "title": "Capture time",
+        "description": "Where does the time a value was captured come from? A time can be an ISO 8601 text or a Unix time in seconds or milliseconds. When it comes from another entity, the value and the time are paired once both have stayed unchanged for 5 seconds.",
+        "menu_options": {
+          "source_attribute": "Attribute of the source sensor",
+          "entity_state": "State of another entity",
+          "entity_attribute": "Attribute of another entity",
+          "entity_change": "Last change of another entity",
+          "template": "Template",
+          "delay": "Time received, less a delay"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribute of the source sensor",
+        "data": {
+          "timestamp_attribute": "Timestamp attribute"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute holding the time the source sensor's value was captured."
+        }
+      },
+      "entity_state": {
+        "title": "State of another entity",
+        "data": {
+          "timestamp_entity": "Timestamp entity"
+        },
+        "data_description": {
+          "timestamp_entity": "Entity whose state is the capture time, such as a timestamp sensor."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribute of another entity",
+        "data": {
+          "timestamp_entity": "Entity"
+        },
+        "data_description": {
+          "timestamp_entity": "Entity with an attribute holding the capture time. The attribute is chosen next."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribute of another entity",
+        "data": {
+          "timestamp_attribute": "Timestamp attribute"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute holding the capture time."
+        }
+      },
+      "entity_change": {
+        "title": "Last change of another entity",
+        "data": {
+          "timestamp_entity": "Entity",
+          "timestamp_property": "Time"
+        },
+        "data_description": {
+          "timestamp_property": "Last changed: when its state last changed. Last updated: when its state or an attribute last changed. Last reported: when it last reported, even without a change."
+        }
+      },
+      "template": {
+        "title": "Template",
+        "data": {
+          "timestamp_template": "Template"
+        },
+        "data_description": {
+          "timestamp_template": "Renders the capture time. The variable `source` holds the entity ID of the source sensor, and `now()` gives the time a change was received."
+        }
+      },
+      "delay": {
+        "title": "Time received, less a delay",
+        "data": {
+          "timestamp_delay": "Delay"
+        },
+        "data_description": {
+          "timestamp_delay": "The capture time is the time a value was received, less this delay."
+        }
+      },
       "details": {
-        "title": "Capture time and unit",
+        "title": "Unit and classes",
         "description": "The unit and the classes are taken from the source sensor and can be changed.",
         "data": {
-          "timestamp_attribute": "Timestamp attribute",
           "unit_of_measurement": "Unit of measurement",
           "device_class": "Device class",
           "state_class": "State class"
         },
         "data_description": {
-          "timestamp_attribute": "Attribute of the source sensor holding the time its value was captured.",
           "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
         }
       }
     },
     "error": {
       "unit_not_valid": "The unit of measurement does not fit the device class.",
-      "state_class_not_valid": "The state class does not fit the device class."
+      "state_class_not_valid": "The state class does not fit the device class.",
+      "entity_is_source": "The source sensor's state is the value itself. Choose another entity.",
+      "template_invalid": "The template cannot be rendered.",
+      "template_not_a_time": "The template does not render a time."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Change the backdated sensor",
-        "description": "With another source sensor, the current value stays until that sensor reports a value captured later.",
+        "description": "After a change, the current value stays until a value captured later arrives.",
         "data": {
           "source": "Source sensor"
         },
@@ -45,23 +122,109 @@
           "source": "Sensor whose numeric state is mirrored."
         }
       },
-      "details": {
-        "title": "Capture time and unit",
+      "timestamp": {
+        "title": "Capture time",
+        "description": "Where does the time a value was captured come from? A time can be an ISO 8601 text or a Unix time in seconds or milliseconds. When it comes from another entity, the value and the time are paired once both have stayed unchanged for 5 seconds.",
+        "menu_options": {
+          "source_attribute": "Attribute of the source sensor",
+          "entity_state": "State of another entity",
+          "entity_attribute": "Attribute of another entity",
+          "entity_change": "Last change of another entity",
+          "template": "Template",
+          "delay": "Time received, less a delay"
+        }
+      },
+      "source_attribute": {
+        "title": "Attribute of the source sensor",
         "data": {
-          "timestamp_attribute": "Timestamp attribute",
+          "timestamp_attribute": "Timestamp attribute"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute holding the time the source sensor's value was captured."
+        }
+      },
+      "entity_state": {
+        "title": "State of another entity",
+        "data": {
+          "timestamp_entity": "Timestamp entity"
+        },
+        "data_description": {
+          "timestamp_entity": "Entity whose state is the capture time, such as a timestamp sensor."
+        }
+      },
+      "entity_attribute": {
+        "title": "Attribute of another entity",
+        "data": {
+          "timestamp_entity": "Entity"
+        },
+        "data_description": {
+          "timestamp_entity": "Entity with an attribute holding the capture time. The attribute is chosen next."
+        }
+      },
+      "entity_attribute_name": {
+        "title": "Attribute of another entity",
+        "data": {
+          "timestamp_attribute": "Timestamp attribute"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute holding the capture time."
+        }
+      },
+      "entity_change": {
+        "title": "Last change of another entity",
+        "data": {
+          "timestamp_entity": "Entity",
+          "timestamp_property": "Time"
+        },
+        "data_description": {
+          "timestamp_property": "Last changed: when its state last changed. Last updated: when its state or an attribute last changed. Last reported: when it last reported, even without a change."
+        }
+      },
+      "template": {
+        "title": "Template",
+        "data": {
+          "timestamp_template": "Template"
+        },
+        "data_description": {
+          "timestamp_template": "Renders the capture time. The variable `source` holds the entity ID of the source sensor, and `now()` gives the time a change was received."
+        }
+      },
+      "delay": {
+        "title": "Time received, less a delay",
+        "data": {
+          "timestamp_delay": "Delay"
+        },
+        "data_description": {
+          "timestamp_delay": "The capture time is the time a value was received, less this delay."
+        }
+      },
+      "details": {
+        "title": "Unit and classes",
+        "data": {
           "unit_of_measurement": "Unit of measurement",
           "device_class": "Device class",
           "state_class": "State class"
         },
         "data_description": {
-          "timestamp_attribute": "Attribute of the source sensor holding the time its value was captured.",
           "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
         }
       }
     },
     "error": {
       "unit_not_valid": "The unit of measurement does not fit the device class.",
-      "state_class_not_valid": "The state class does not fit the device class."
+      "state_class_not_valid": "The state class does not fit the device class.",
+      "entity_is_source": "The source sensor's state is the value itself. Choose another entity.",
+      "template_invalid": "The template cannot be rendered.",
+      "template_not_a_time": "The template does not render a time."
+    }
+  },
+  "selector": {
+    "timestamp_property": {
+      "options": {
+        "last_changed": "Last changed",
+        "last_updated": "Last updated",
+        "last_reported": "Last reported"
+      }
     }
   }
 }
