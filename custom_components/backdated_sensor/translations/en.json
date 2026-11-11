@@ -1,0 +1,67 @@
+{
+  "title": "Backdated Sensor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create a backdated sensor",
+        "description": "Mirrors a numeric sensor and records each value at the time one of its attributes gives, for example when a car captured its battery level, instead of when Home Assistant received it.",
+        "data": {
+          "name": "Name",
+          "source": "Source sensor"
+        },
+        "data_description": {
+          "source": "Sensor whose numeric state is mirrored."
+        }
+      },
+      "details": {
+        "title": "Capture time and unit",
+        "description": "The unit and the classes are taken from the source sensor and can be changed.",
+        "data": {
+          "timestamp_attribute": "Timestamp attribute",
+          "unit_of_measurement": "Unit of measurement",
+          "device_class": "Device class",
+          "state_class": "State class"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute of the source sensor holding the time its value was captured.",
+          "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "The unit of measurement does not fit the device class.",
+      "state_class_not_valid": "The state class does not fit the device class."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Change the backdated sensor",
+        "description": "With another source sensor, the current value stays until that sensor reports a value captured later.",
+        "data": {
+          "source": "Source sensor"
+        },
+        "data_description": {
+          "source": "Sensor whose numeric state is mirrored."
+        }
+      },
+      "details": {
+        "title": "Capture time and unit",
+        "data": {
+          "timestamp_attribute": "Timestamp attribute",
+          "unit_of_measurement": "Unit of measurement",
+          "device_class": "Device class",
+          "state_class": "State class"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribute of the source sensor holding the time its value was captured.",
+          "state_class": "Long-term statistics are kept only with a state class. Hourly statistics compiled before a backdated value arrived are then recomputed."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "The unit of measurement does not fit the device class.",
+      "state_class_not_valid": "The state class does not fit the device class."
+    }
+  }
+}

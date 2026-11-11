@@ -2,9 +2,12 @@
   "domain": "backdated_sensor",
   "name": "Backdated Sensor",
   "codeowners": [],
-  "dependencies": ["recorder"],
+  "config_flow": true,
+  "dependencies": [
+    "recorder"
+  ],
   "integration_type": "helper",
   "iot_class": "calculated",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

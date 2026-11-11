@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Any
 
-import voluptuous as vol
+import probatio
 from homeassistant.components.sensor import (
     CONF_STATE_CLASS,
     DEVICE_CLASSES_SCHEMA,
@@ -18,6 +18,7 @@ from homeassistant.components.sensor import (
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_NAME,
@@ -36,8 +37,13 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.device import async_entity_id_to_device
+from homeassistant.helpers.device_registry import AnyDeviceEntry
 from homeassistant.helpers.entity import EntityPlatformState
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddConfigEntryEntitiesCallback,
+    AddEntitiesCallback,
+)
 from homeassistant.helpers.event import (
     async_track_point_in_utc_time,
     async_track_state_change_event,
@@ -61,17 +67,23 @@ CORRECTION_DELAY = timedelta(minutes=15)
 # Spacing that keeps a state from sharing its time with the row recorded before it.
 MIN_STEP = 0.001
 
+SENSOR_OPTIONS = {
+    probatio.Required(CONF_SOURCE): cv.entity_id,
+    probatio.Required(CONF_TIMESTAMP_ATTRIBUTE): cv.string,
+    probatio.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
+    probatio.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
+    probatio.Optional(CONF_STATE_CLASS): STATE_CLASSES_SCHEMA,
+}
+
 PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_SOURCE): cv.entity_id,
-        vol.Required(CONF_TIMESTAMP_ATTRIBUTE): cv.string,
-        vol.Optional(CONF_UNIQUE_ID): cv.string,
-        vol.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
-        vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
-        vol.Optional(CONF_STATE_CLASS): STATE_CLASSES_SCHEMA,
+        probatio.Required(CONF_NAME): cv.string,
+        probatio.Optional(CONF_UNIQUE_ID): cv.string,
+        **SENSOR_OPTIONS,
     }
 )
+
+ENTRY_OPTIONS_SCHEMA = probatio.Schema(SENSOR_OPTIONS, extra=probatio.REMOVE_EXTRA)
 
 
 async def async_setup_platform(
@@ -81,7 +93,25 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up a backdated sensor from YAML."""
-    async_add_entities([BackdatedSensor(config)])
+    async_add_entities([BackdatedSensor(config, config.get(CONF_UNIQUE_ID))])
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up a backdated sensor created in the UI, on the device of its source."""
+    options = ENTRY_OPTIONS_SCHEMA(dict(entry.options))
+    async_add_entities(
+        [
+            BackdatedSensor(
+                {**options, CONF_NAME: entry.title},
+                entry.entry_id,
+                async_entity_id_to_device(hass, options[CONF_SOURCE]),
+            )
+        ]
+    )
 
 
 class BackdatedSensor(SensorEntity, RestoreEntity):
@@ -89,10 +119,16 @@ class BackdatedSensor(SensorEntity, RestoreEntity):
 
     _attr_should_poll = False
 
-    def __init__(self, config: ConfigType) -> None:
-        """Initialise the sensor from its YAML entry."""
+    def __init__(
+        self,
+        config: ConfigType,
+        unique_id: str | None,
+        device: AnyDeviceEntry | None = None,
+    ) -> None:
+        """Initialise the sensor from its options."""
         self._attr_name = config[CONF_NAME]
-        self._attr_unique_id = config.get(CONF_UNIQUE_ID)
+        self._attr_unique_id = unique_id
+        self.device_entry = device
         self._attr_native_unit_of_measurement = config.get(CONF_UNIT_OF_MEASUREMENT)
         self._attr_device_class = config.get(CONF_DEVICE_CLASS)
         self._attr_state_class = config.get(CONF_STATE_CLASS)

@@ -1,0 +1,67 @@
+{
+  "title": "Sensor con fecha retroactiva",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Crear un sensor con fecha retroactiva",
+        "description": "Replica un sensor numérico y registra cada valor en el momento que indica uno de sus atributos, por ejemplo cuándo un coche midió el nivel de su batería, en lugar de cuándo lo recibió Home Assistant.",
+        "data": {
+          "name": "Nombre",
+          "source": "Sensor de origen"
+        },
+        "data_description": {
+          "source": "Sensor cuyo estado numérico se replica."
+        }
+      },
+      "details": {
+        "title": "Momento de captura y unidad",
+        "description": "La unidad y las clases se toman del sensor de origen y se pueden cambiar.",
+        "data": {
+          "timestamp_attribute": "Atributo de marca de tiempo",
+          "unit_of_measurement": "Unidad de medida",
+          "device_class": "Clase de dispositivo",
+          "state_class": "Clase de estado"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo del sensor de origen que contiene el momento en que se capturó su valor.",
+          "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "La unidad de medida no corresponde a la clase de dispositivo.",
+      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Cambiar el sensor con fecha retroactiva",
+        "description": "Con otro sensor de origen, el valor actual se mantiene hasta que ese sensor informe de un valor capturado más tarde.",
+        "data": {
+          "source": "Sensor de origen"
+        },
+        "data_description": {
+          "source": "Sensor cuyo estado numérico se replica."
+        }
+      },
+      "details": {
+        "title": "Momento de captura y unidad",
+        "data": {
+          "timestamp_attribute": "Atributo de marca de tiempo",
+          "unit_of_measurement": "Unidad de medida",
+          "device_class": "Clase de dispositivo",
+          "state_class": "Clase de estado"
+        },
+        "data_description": {
+          "timestamp_attribute": "Atributo del sensor de origen que contiene el momento en que se capturó su valor.",
+          "state_class": "Las estadísticas a largo plazo solo se guardan con una clase de estado. Las estadísticas horarias calculadas antes de que llegara un valor con fecha retroactiva se vuelven a calcular."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "La unidad de medida no corresponde a la clase de dispositivo.",
+      "state_class_not_valid": "La clase de estado no corresponde a la clase de dispositivo."
+    }
+  }
+}

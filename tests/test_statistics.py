@@ -160,7 +160,9 @@ async def test_a_value_captured_in_the_running_period_needs_no_correction(
     await setup_sensor(hass)
 
     data = await async_mock_restore_state_shutdown_restart(hass)
-    assert data.last_states[ENTITY].extra_data.as_dict()["correct_statistics_from"] is None
+    assert (
+        data.last_states[ENTITY].extra_data.as_dict()["correct_statistics_from"] is None
+    )
 
 
 def test_hour_statistics_weights_values_by_duration() -> None:

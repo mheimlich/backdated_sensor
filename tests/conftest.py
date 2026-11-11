@@ -39,7 +39,11 @@ async def mock_recorder_before_hass(async_setup_recorder_instance) -> None:
 
 def report(hass: HomeAssistant, value: str, captured: datetime | None) -> None:
     """Set the source state, with the capture time if one is given."""
-    attributes = {"unit_of_measurement": "%"}
+    attributes = {
+        "unit_of_measurement": "%",
+        "device_class": "battery",
+        "state_class": "measurement",
+    }
     if captured is not None:
         attributes["data_captured_at"] = captured.isoformat()
     hass.states.async_set(SOURCE, value, attributes)

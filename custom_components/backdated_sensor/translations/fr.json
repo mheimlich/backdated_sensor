@@ -1,0 +1,67 @@
+{
+  "title": "Capteur antidaté",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Créer un capteur antidaté",
+        "description": "Reproduit un capteur numérique et enregistre chaque valeur à l'instant indiqué par l'un de ses attributs, par exemple le moment où une voiture a relevé le niveau de sa batterie, au lieu du moment où Home Assistant l'a reçue.",
+        "data": {
+          "name": "Nom",
+          "source": "Capteur source"
+        },
+        "data_description": {
+          "source": "Capteur dont l'état numérique est reproduit."
+        }
+      },
+      "details": {
+        "title": "Instant du relevé et unité",
+        "description": "L'unité et les classes sont reprises du capteur source et peuvent être modifiées.",
+        "data": {
+          "timestamp_attribute": "Attribut d'horodatage",
+          "unit_of_measurement": "Unité de mesure",
+          "device_class": "Classe d'appareil",
+          "state_class": "Classe d'état"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut du capteur source contenant l'instant où sa valeur a été relevée.",
+          "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "L'unité de mesure ne correspond pas à la classe d'appareil.",
+      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modifier le capteur antidaté",
+        "description": "Avec un autre capteur source, la valeur actuelle est conservée jusqu'à ce que ce capteur signale une valeur relevée plus tard.",
+        "data": {
+          "source": "Capteur source"
+        },
+        "data_description": {
+          "source": "Capteur dont l'état numérique est reproduit."
+        }
+      },
+      "details": {
+        "title": "Instant du relevé et unité",
+        "data": {
+          "timestamp_attribute": "Attribut d'horodatage",
+          "unit_of_measurement": "Unité de mesure",
+          "device_class": "Classe d'appareil",
+          "state_class": "Classe d'état"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut du capteur source contenant l'instant où sa valeur a été relevée.",
+          "state_class": "Les statistiques à long terme ne sont conservées qu'avec une classe d'état. Les statistiques horaires calculées avant l'arrivée d'une valeur antidatée sont alors recalculées."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "L'unité de mesure ne correspond pas à la classe d'appareil.",
+      "state_class_not_valid": "La classe d'état ne correspond pas à la classe d'appareil."
+    }
+  }
+}

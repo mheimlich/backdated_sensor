@@ -1,0 +1,67 @@
+{
+  "title": "回溯时间戳传感器",
+  "config": {
+    "step": {
+      "user": {
+        "title": "创建回溯时间戳传感器",
+        "description": "镜像一个数值传感器，并按其某个属性给出的时间记录每个值（例如汽车采集电池电量的时间），而不是按 Home Assistant 收到该值的时间记录。",
+        "data": {
+          "name": "名称",
+          "source": "源传感器"
+        },
+        "data_description": {
+          "source": "要镜像其数值状态的传感器。"
+        }
+      },
+      "details": {
+        "title": "采集时间和单位",
+        "description": "单位和类别取自源传感器，可以更改。",
+        "data": {
+          "timestamp_attribute": "时间戳属性",
+          "unit_of_measurement": "度量单位",
+          "device_class": "设备类别",
+          "state_class": "状态类"
+        },
+        "data_description": {
+          "timestamp_attribute": "源传感器中包含其值采集时间的属性。",
+          "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "度量单位与设备类别不匹配。",
+      "state_class_not_valid": "状态类与设备类别不匹配。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "更改回溯时间戳传感器",
+        "description": "更换源传感器后，当前值会保留，直到该传感器报告采集时间更晚的值。",
+        "data": {
+          "source": "源传感器"
+        },
+        "data_description": {
+          "source": "要镜像其数值状态的传感器。"
+        }
+      },
+      "details": {
+        "title": "采集时间和单位",
+        "data": {
+          "timestamp_attribute": "时间戳属性",
+          "unit_of_measurement": "度量单位",
+          "device_class": "设备类别",
+          "state_class": "状态类"
+        },
+        "data_description": {
+          "timestamp_attribute": "源传感器中包含其值采集时间的属性。",
+          "state_class": "只有设置了状态类才会保存长期统计数据。在回溯值到达之前已计算的每小时统计数据随后会重新计算。"
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "度量单位与设备类别不匹配。",
+      "state_class_not_valid": "状态类与设备类别不匹配。"
+    }
+  }
+}

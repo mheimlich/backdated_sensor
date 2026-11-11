@@ -1,0 +1,67 @@
+{
+  "title": "Rückdatierter Sensor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Rückdatierten Sensor erstellen",
+        "description": "Spiegelt einen numerischen Sensor und zeichnet jeden Wert zu dem Zeitpunkt auf, den eines seiner Attribute angibt, zum Beispiel wann ein Auto seinen Akkustand erfasst hat, statt wann Home Assistant ihn empfangen hat.",
+        "data": {
+          "name": "Name",
+          "source": "Quellsensor"
+        },
+        "data_description": {
+          "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
+        }
+      },
+      "details": {
+        "title": "Erfassungszeit und Einheit",
+        "description": "Einheit und Klassen sind vom Quellsensor übernommen und können geändert werden.",
+        "data": {
+          "timestamp_attribute": "Zeitstempel-Attribut",
+          "unit_of_measurement": "Maßeinheit",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut des Quellsensors, das den Zeitpunkt enthält, zu dem sein Wert erfasst wurde.",
+          "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "Die Maßeinheit passt nicht zur Geräteklasse.",
+      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rückdatierten Sensor ändern",
+        "description": "Mit einem anderen Quellsensor bleibt der aktuelle Wert, bis dieser Sensor einen später erfassten Wert meldet.",
+        "data": {
+          "source": "Quellsensor"
+        },
+        "data_description": {
+          "source": "Sensor, dessen numerischer Zustand gespiegelt wird."
+        }
+      },
+      "details": {
+        "title": "Erfassungszeit und Einheit",
+        "data": {
+          "timestamp_attribute": "Zeitstempel-Attribut",
+          "unit_of_measurement": "Maßeinheit",
+          "device_class": "Geräteklasse",
+          "state_class": "Zustandsklasse"
+        },
+        "data_description": {
+          "timestamp_attribute": "Attribut des Quellsensors, das den Zeitpunkt enthält, zu dem sein Wert erfasst wurde.",
+          "state_class": "Langzeitstatistiken gibt es nur mit einer Zustandsklasse. Stündliche Statistiken, die vor dem Eintreffen eines rückdatierten Werts berechnet wurden, werden dann neu berechnet."
+        }
+      }
+    },
+    "error": {
+      "unit_not_valid": "Die Maßeinheit passt nicht zur Geräteklasse.",
+      "state_class_not_valid": "Die Zustandsklasse passt nicht zur Geräteklasse."
+    }
+  }
+}
