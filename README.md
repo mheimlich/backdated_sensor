@@ -152,7 +152,7 @@ python -m pytest
 ```
 
 GitHub Actions runs the same on every push and pull request, and checks the integration
-with Home Assistant's hassfest.
+with Home Assistant's hassfest and the HACS validation.
 
 ## Icon
 
