@@ -137,6 +137,17 @@ python -m pytest
 
 with `pytest-homeassistant-custom-component` installed (see `requirements_test.txt`).
 
+## Icon
+
+`assets/icon.svg` is the source of the icons in `custom_components/backdated_sensor/brand`,
+which Home Assistant shows for the integration. After changing it, render them again:
+
+```sh
+cd custom_components/backdated_sensor/brand
+magick -background none -density 96 ../../../assets/icon.svg -strip -depth 8 -define png:color-type=6 icon@2x.png
+magick -background none -density 48 ../../../assets/icon.svg -strip -depth 8 -define png:color-type=6 icon.png
+```
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

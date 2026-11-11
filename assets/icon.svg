@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="15.6 31.3 449.4 449.4">
+  <!-- Backdated Sensor: a reading on a line chart inside an arrow running back in time. -->
+  <path d="M 88.7 316.9 A 178 178 0 1 0 88.7 195.1" fill="none" stroke="#039BE5" stroke-width="46" stroke-linecap="round"/>
+  <path d="M 28.6 173.2 L 62.1 268.4 L 148.9 217 Z" fill="#039BE5" stroke="#039BE5" stroke-width="10" stroke-linejoin="round"/>
+  <polyline points="148,318 210,258 262,296 344,198" fill="none" stroke="#039BE5" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="344" cy="198" r="34" fill="#FF9800"/>
+</svg>
