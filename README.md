@@ -136,3 +136,7 @@ python -m pytest
 ```
 
 with `pytest-homeassistant-custom-component` installed (see `requirements_test.txt`).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
