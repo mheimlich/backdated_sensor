@@ -140,6 +140,42 @@ async def test_periods_compiled_before_a_backdated_value_are_recomputed(
     ) | _five_minute_means(_at(9, 30), _at(13), 50)
 
 
+async def _report_late(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, captured: datetime
+) -> None:
+    """Record 30 from 6:00, then 50 captured at captured, which arrives at 8:20."""
+    freezer.move_to(_at(6, 10))
+    report(hass, "30", _at(6))
+    await setup_sensor(hass)
+    await async_wait_recording_done(hass)
+
+    freezer.move_to(_at(8, 20))
+    await _compile(hass, _at(6), _at(8, 15))
+    report(hass, "50", captured)
+    await hass.async_block_till_done()
+    await _compile(hass, _at(8, 15), _at(9))
+
+
+async def _correct(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
+    """Run the correction scheduled for 9:15."""
+    freezer.move_to(_at(9, 16))
+    async_fire_time_changed(hass, _at(9, 16))
+    await hass.async_block_till_done()
+
+
+async def test_a_value_captured_on_the_hour_counts_from_there(
+    recorder_mock: Recorder, hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A row recorded exactly where the correction starts is part of it."""
+    await _report_late(hass, freezer, _at(7))
+    await _correct(hass, freezer)
+
+    assert await _hours(hass) == {6: (30, 30, 30), 7: (50, 50, 50), 8: (50, 50, 50)}
+    assert await _five_minutes(hass) == _five_minute_means(
+        _at(6), _at(7), 30
+    ) | _five_minute_means(_at(7), _at(9), 50)
+
+
 async def test_a_pending_correction_is_stored_for_a_restart(
     recorder_mock: Recorder, hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:

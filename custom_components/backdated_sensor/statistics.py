@@ -113,11 +113,13 @@ async def async_correct_statistics(
     if not any(compiled.values()):
         return rewritten
 
+    # The query leaves out a row recorded exactly at its start, so it starts a
+    # microsecond earlier, as the recorder's own compile does.
     states = await instance.async_add_executor_job(
         partial(
             state_changes_during_period,
             hass,
-            start,
+            start - timedelta.resolution,
             end,
             statistic_id,
             no_attributes=True,
