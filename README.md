@@ -135,13 +135,14 @@ Each entity has the attribute `captured_at`, the capture time of its value.
 - **Restarts and reloads.** The entity restores its value and capture time and records it
   just after its last row, which after a reload is the `unavailable` row Home Assistant
   writes meanwhile. A newer value the source holds by then is taken at once.
-- **Long-term statistics.** For a sensor with a `state_class`, the recorder compiles
-  statistics every five minutes from the rows recorded so far, so periods compiled before a
+- **Statistics.** For a sensor with a `state_class`, the recorder compiles five-minute
+  and hourly statistics from the rows recorded so far, so periods compiled before a
   backdated value arrived hold the previous value. Once the hour in which the value arrived
-  has been compiled, the sensor recomputes the affected hourly statistics from the recorded
-  history (time-weighted mean, minimum and maximum) and rewrites them. It only rewrites
-  hours that already exist. The five-minute statistics keep the previous value. A pending
-  correction is kept across restarts.
+  has been compiled, the sensor recomputes the affected five-minute and hourly statistics
+  from the recorded history (time-weighted mean, minimum and maximum) and rewrites them.
+  Until then, the entity's more-info dialog, which draws the last 24 hours from the
+  five-minute statistics, shows the value from the time it arrived. Only periods that
+  already exist are rewritten. A pending correction is kept across restarts.
 
 ## Tests
 

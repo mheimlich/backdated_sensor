@@ -40,7 +40,7 @@ from homeassistant.util import dt as dt_util
 
 from .capture_time import capture_time_from, parse_time
 from .const import ATTR_CAPTURED_AT, CONF_SOURCE
-from .statistics import async_correct_hourly_statistics, hour_start
+from .statistics import async_correct_statistics, hour_start
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -318,7 +318,7 @@ class BackdatedEntity(RestoreEntity):
             return
         end = hour_start(dt_util.utcnow())
         try:
-            count = await async_correct_hourly_statistics(
+            rewritten = await async_correct_statistics(
                 self.hass, self.entity_id, self.unit_of_measurement, start, end
             )
         except Exception:
@@ -327,7 +327,11 @@ class BackdatedEntity(RestoreEntity):
             )
             return
         _LOGGER.debug(
-            "Corrected %d hourly statistics of %s from %s", count, self.entity_id, start
+            "Corrected %d five-minute and %d hourly statistics of %s from %s",
+            rewritten["5minute"],
+            rewritten["hour"],
+            self.entity_id,
+            start,
         )
 
 

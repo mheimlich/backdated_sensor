@@ -1,4 +1,4 @@
-"""Tests of the correction of hourly statistics after a backdated value."""
+"""Tests of the correction of statistics after a backdated value."""
 
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
@@ -18,7 +18,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     do_adhoc_statistics,
 )
 
-from custom_components.backdated_sensor.statistics import hour_statistics
+from custom_components.backdated_sensor.statistics import period_statistics
 
 from .conftest import ENTITY, report, setup_sensor
 
@@ -61,10 +61,42 @@ async def _hours(hass: HomeAssistant) -> dict[int, tuple[float, float, float]]:
     }
 
 
-async def test_hours_compiled_before_a_backdated_value_are_recomputed(
+async def _five_minutes(hass: HomeAssistant) -> dict[tuple[int, int], float]:
+    """Return the five-minute means of the sensor by (hour, minute) of DAY."""
+    await async_wait_recording_done(hass)
+    rows = await hass.async_add_executor_job(
+        statistics_during_period,
+        hass,
+        DAY,
+        None,
+        {ENTITY},
+        "5minute",
+        None,
+        {"mean"},
+    )
+    periods = {}
+    for row in rows.get(ENTITY, []):
+        moment = datetime.fromtimestamp(row["start"], UTC)
+        periods[moment.hour, moment.minute] = row["mean"]
+    return periods
+
+
+def _five_minute_means(
+    start: datetime, end: datetime, mean: float
+) -> dict[tuple[int, int], float]:
+    """Return the same mean for each five-minute period from start to end."""
+    periods = {}
+    moment = start
+    while moment < end:
+        periods[moment.hour, moment.minute] = mean
+        moment += timedelta(minutes=5)
+    return periods
+
+
+async def test_periods_compiled_before_a_backdated_value_are_recomputed(
     recorder_mock: Recorder, hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
-    """Hours 9 to 12 are rewritten after hour 12 is compiled; no hour is added."""
+    """The periods from 9:00 are recomputed once hour 12 is compiled; none is added."""
     freezer.move_to(_at(6, 10))
     report(hass, "30", _at(6))
     await setup_sensor(hass)
@@ -79,11 +111,16 @@ async def test_hours_compiled_before_a_backdated_value_are_recomputed(
     hours = await _hours(hass)
     assert hours[9] == (30, 30, 30)
     assert hours[12] == (pytest.approx(45), 30, 50)
+    compiled = _five_minute_means(_at(6), _at(12, 15), 30) | _five_minute_means(
+        _at(12, 15), _at(13), 50
+    )
+    assert await _five_minutes(hass) == compiled
 
     freezer.move_to(_at(13, 14))
     async_fire_time_changed(hass, _at(13, 14))
     await hass.async_block_till_done()
     assert (await _hours(hass))[12] == (pytest.approx(45), 30, 50)
+    assert await _five_minutes(hass) == compiled
 
     freezer.move_to(_at(13, 16))
     async_fire_time_changed(hass, _at(13, 16))
@@ -98,6 +135,9 @@ async def test_hours_compiled_before_a_backdated_value_are_recomputed(
         11: (50, 50, 50),
         12: (50, 50, 50),
     }
+    assert await _five_minutes(hass) == _five_minute_means(
+        _at(6), _at(9, 30), 30
+    ) | _five_minute_means(_at(9, 30), _at(13), 50)
 
 
 async def test_a_pending_correction_is_stored_for_a_restart(
@@ -141,8 +181,8 @@ async def test_a_restored_correction_runs_after_the_next_hour(
         ),
     )
     with patch(
-        "custom_components.backdated_sensor.entity.async_correct_hourly_statistics",
-        return_value=3,
+        "custom_components.backdated_sensor.entity.async_correct_statistics",
+        return_value={"5minute": 36, "hour": 3},
     ) as correct:
         await setup_sensor(hass)
         freezer.move_to(_at(10, 16))
@@ -166,25 +206,37 @@ async def test_a_value_captured_in_the_running_period_needs_no_correction(
     )
 
 
-def test_hour_statistics_weights_values_by_duration() -> None:
+def test_period_statistics_weights_values_by_duration() -> None:
     """The mean follows the recorder's time-weighted average."""
     values = [(10.0, _at(5, 50)), (20.0, _at(6, 15)), (40.0, _at(6, 45))]
-    assert hour_statistics(values, _at(6), _at(7)) == {
+    assert period_statistics(values, _at(6), _at(7)) == {
         "start": _at(6),
         "mean": pytest.approx((10 * 15 + 20 * 30 + 40 * 15) / 60),
         "min": 10.0,
         "max": 40.0,
     }
-    assert hour_statistics(values, _at(7), _at(8)) == {
+    assert period_statistics(values, _at(7), _at(8)) == {
         "start": _at(7),
         "mean": 40.0,
         "min": 40.0,
         "max": 40.0,
     }
-    assert hour_statistics(values[1:], _at(6), _at(7)) == {
+    assert period_statistics(values[1:], _at(6), _at(7)) == {
         "start": _at(6),
         "mean": pytest.approx((20 * 30 + 40 * 15) / 45),
         "min": 20.0,
         "max": 40.0,
     }
-    assert hour_statistics(values, _at(4), _at(5)) is None
+    assert period_statistics(values, _at(4), _at(5)) is None
+    assert period_statistics(values, _at(6, 10), _at(6, 15)) == {
+        "start": _at(6, 10),
+        "mean": 10.0,
+        "min": 10.0,
+        "max": 10.0,
+    }
+    assert period_statistics(values, _at(6, 15), _at(6, 20)) == {
+        "start": _at(6, 15),
+        "mean": 20.0,
+        "min": 20.0,
+        "max": 20.0,
+    }
