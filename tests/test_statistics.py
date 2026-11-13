@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.components.recorder import Recorder
+from homeassistant.components.recorder.db_schema import StatisticsShortTerm
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.core import HomeAssistant, State
 from pytest_homeassistant_custom_component.common import (
@@ -174,6 +175,32 @@ async def test_a_value_captured_on_the_hour_counts_from_there(
     assert await _five_minutes(hass) == _five_minute_means(
         _at(6), _at(7), 30
     ) | _five_minute_means(_at(7), _at(9), 50)
+
+
+async def test_hours_are_corrected_when_the_five_minute_import_fails(
+    recorder_mock: Recorder,
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A failing import of the five-minute periods leaves the hours rewritten."""
+    await _report_late(hass, freezer, _at(7, 30))
+    import_statistics = Recorder.async_import_statistics
+
+    def import_hours_only(self, metadata, statistics, table) -> None:
+        if table is StatisticsShortTerm:
+            raise TypeError("unexpected table")
+        import_statistics(self, metadata, statistics, table)
+
+    with patch.object(Recorder, "async_import_statistics", import_hours_only):
+        await _correct(hass, freezer)
+
+    assert await _hours(hass) == {
+        6: (30, 30, 30),
+        7: (pytest.approx(40), 30, 50),
+        8: (50, 50, 50),
+    }
+    assert "Could not correct the statistics" in caplog.text
 
 
 async def test_a_pending_correction_is_stored_for_a_restart(

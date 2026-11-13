@@ -23,7 +23,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 HOUR = timedelta(hours=1)
-PERIODS = {"5minute": timedelta(minutes=5), "hour": HOUR}
+# The hours come first, so that a failing import of the five-minute periods, which
+# relies on an internal method of the recorder, cannot hold them back.
+PERIODS = {"hour": HOUR, "5minute": timedelta(minutes=5)}
 
 
 def hour_start(moment: datetime) -> datetime:
